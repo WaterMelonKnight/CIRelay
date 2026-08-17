@@ -1,5 +1,5 @@
 const ERROR_PATTERN =
-  /(?:\berror\b|\bfatal\b|\bexception\b|\bfailed\b|\bpanic\b)/i;
+  /(?:\berror\b|\bfatal\b|\bexception\b|\bfail(?:ed|ures?|s)?\b|\bpanic\b)/i;
 const STACK_PATTERN =
   /^\s*(?:at\s+.+|File\s+".+",\s+line\s+\d+|Caused by:|[A-Za-z_$][\w.$]*(?:Error|Exception):)/;
 

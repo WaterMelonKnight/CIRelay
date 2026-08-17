@@ -20,9 +20,10 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      # M0 does not commit a lockfile until the initial dependency resolution is reviewed.
-      - run: pnpm install
+      # M0 packages expose their types via dist/, so the workspace must be built
+      # before type-aware linting, typechecking, and tests can resolve them.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm build

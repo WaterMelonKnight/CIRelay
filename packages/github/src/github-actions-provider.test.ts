@@ -44,7 +44,7 @@ describe('GitHubActionsProvider', () => {
       ],
     ]);
     const client: GitHubRequester = {
-      request: async (route) => ({ data: responses.get(route) }),
+      request: (route) => Promise.resolve({ data: responses.get(route) }),
     };
     const provider = new GitHubActionsProvider(client);
     const repository = { owner: 'watermelon', name: 'cirelay' };
@@ -57,7 +57,7 @@ describe('GitHubActionsProvider', () => {
   });
   it('accepts fixture log data', async () => {
     const provider = new GitHubActionsProvider({
-      request: async () => ({ data: 'Error: fixture failure' }),
+      request: () => Promise.resolve({ data: 'Error: fixture failure' }),
     });
     await expect(
       provider.getJobLog({ repository: { owner: 'a', name: 'b' }, jobId: '1' }),

@@ -19,27 +19,28 @@ const run: CiRun = {
 };
 const provider: CiProvider = {
   name: 'fixture',
-  listRuns: async () => [run],
-  getRun: async () => run,
-  listJobs: async () => [
-    {
-      id: '9',
-      runId: '7',
-      name: 'test',
-      status: 'completed',
-      conclusion: 'failure',
-      steps: [
-        {
-          number: 1,
-          name: 'vitest',
-          status: 'completed',
-          conclusion: 'failure',
-        },
-      ],
-    },
-  ],
-  getJobLog: async () =>
-    'running tests\nError: expected true\n    at test.ts:4:2',
+  listRuns: () => Promise.resolve([run]),
+  getRun: () => Promise.resolve(run),
+  listJobs: () =>
+    Promise.resolve([
+      {
+        id: '9',
+        runId: '7',
+        name: 'test',
+        status: 'completed',
+        conclusion: 'failure',
+        steps: [
+          {
+            number: 1,
+            name: 'vitest',
+            status: 'completed',
+            conclusion: 'failure',
+          },
+        ],
+      },
+    ]),
+  getJobLog: () =>
+    Promise.resolve('running tests\nError: expected true\n    at test.ts:4:2'),
 };
 
 describe('failure context', () => {

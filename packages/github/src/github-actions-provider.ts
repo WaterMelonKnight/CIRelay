@@ -30,6 +30,16 @@ const status = (value: unknown): CiStatus =>
   value === 'queued' || value === 'in_progress' || value === 'completed'
     ? value
     : 'unknown';
+const changedFileStatuses = [
+  'added',
+  'modified',
+  'removed',
+  'renamed',
+] as const;
+const fileStatus = (
+  value: unknown,
+): (typeof changedFileStatuses)[number] | undefined =>
+  changedFileStatuses.find((item) => item === value);
 const conclusion = (value: unknown): CiConclusion | undefined => {
   const valid: CiConclusion[] = [
     'success',
@@ -101,7 +111,11 @@ export class GitHubActionsProvider implements CiProvider {
     );
     if (typeof data === 'string') return data;
     if (data instanceof ArrayBuffer) return new TextDecoder().decode(data);
-    if (ArrayBuffer.isView(data)) return new TextDecoder().decode(data);
+    if (ArrayBuffer.isView(data)) {
+      return new TextDecoder().decode(
+        new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
+      );
+    }
     throw new Error('GitHub returned an unsupported job log response');
   }
 
@@ -117,12 +131,10 @@ export class GitHubActionsProvider implements CiProvider {
     );
     return array(data).map((value) => {
       const file = object(value);
+      const mappedStatus = fileStatus(file.status);
       return {
         path: text(file.filename),
-        ...(typeof file.status === 'string' &&
-        ['added', 'modified', 'removed', 'renamed'].includes(file.status)
-          ? { status: file.status as ChangedFile['status'] }
-          : {}),
+        ...(mappedStatus ? { status: mappedStatus } : {}),
         ...(typeof file.patch === 'string' ? { patch: file.patch } : {}),
       };
     });
