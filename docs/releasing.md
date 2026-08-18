@@ -1,11 +1,15 @@
 # Releasing CIRelay packages
 
-The first public npm release is being prepared as version `0.1.0-alpha.1`. This document is a plan; repository CI does not publish and contributors do not need npm credentials.
+The corrected public npm release is being prepared as version `0.1.0-alpha.2`. This document is a plan; repository CI does not publish and contributors do not need npm credentials.
+
+## Alpha.1 packaging postmortem
+
+`0.1.0-alpha.1` was published with pnpm `workspace:` dependency specifications still present in its npm manifests, which made external npm installation fail. `0.1.0-alpha.2` replaces those specifications with exact npm-compatible versions. Release checks must inspect artifacts produced by `npm pack`, which models the `npm publish` manifest behavior, rather than relying only on `pnpm pack` artifacts.
 
 ## First alpha release checklist
 
 1. Validate the latest `main` with `pnpm install --frozen-lockfile`, `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm format:check`.
-2. Run `pnpm pack:check`. It verifies the isolated tarballs, including the shared prerelease version and exact internal dependency versions. Do not commit `.tgz` files.
+2. Run `pnpm pack:check`. It uses `npm pack` and verifies the isolated tarballs, including the shared prerelease version, exact internal dependency versions, and the absence of `workspace:` dependency specifications. Do not commit `.tgz` files.
 3. From a clean, validated checkout and an authenticated maintainer environment, publish with the `alpha` dist-tag in dependency order:
 
    ```sh
@@ -20,7 +24,7 @@ The first public npm release is being prepared as version `0.1.0-alpha.1`. This 
 
    ```sh
    npx @cirelay/mcp@alpha
-   npx @cirelay/mcp@0.1.0-alpha.1
+   npx @cirelay/mcp@0.1.0-alpha.2
    ```
 
 5. Only after publication is verified, create the corresponding Git tag and release notes according to maintainer policy.
