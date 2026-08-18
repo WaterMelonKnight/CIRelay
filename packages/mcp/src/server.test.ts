@@ -52,7 +52,23 @@ describe('MCP server', () => {
       conclusion: {},
       latest: {},
       limit: {},
+      sourcePolicy: {},
     });
+    await Promise.all([client.close(), server.close()]);
+  });
+
+  it('accepts an explicit failure-context source policy', async () => {
+    const { client, server } = await connectedClient();
+    const result = await client.callTool({
+      name: 'get_failure_context',
+      arguments: {
+        owner: 'acme',
+        repository: 'app',
+        runId: '7',
+        sourcePolicy: 'refresh',
+      },
+    });
+    expect(result.isError).not.toBe(true);
     await Promise.all([client.close(), server.close()]);
   });
 

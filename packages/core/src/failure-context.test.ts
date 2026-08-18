@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildFailureContext,
   buildFailureContextForQuery,
@@ -58,6 +58,27 @@ describe('failure context', () => {
       'stack-trace',
     ]);
     expect(context.generatedAt).toBe('2025-02-01T00:00:00.000Z');
+  });
+  it('retrieves through an injected log source', async () => {
+    const getJobLog = vi.fn(() => Promise.resolve('Error: injected'));
+    await buildFailureContext(
+      provider,
+      { repository: run.repository, runId: run.id },
+      { logSource: { getJobLog }, logSourcePolicy: 'refresh' },
+    );
+    expect(getJobLog).toHaveBeenCalledWith(
+      { repository: run.repository, jobId: '9' },
+      { policy: 'refresh' },
+    );
+  });
+
+  it('reuses raw job logs on repeated default builds', async () => {
+    const getJobLog = vi.fn(() => Promise.resolve('Error: once'));
+    const repeatProvider = { ...provider, getJobLog };
+    const input = { repository: run.repository, runId: run.id };
+    await buildFailureContext(repeatProvider, input);
+    await buildFailureContext(repeatProvider, input);
+    expect(getJobLog).toHaveBeenCalledTimes(1);
   });
   it('extracts errors and nearby log lines', () =>
     expect(

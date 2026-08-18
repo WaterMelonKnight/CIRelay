@@ -90,8 +90,17 @@ export function createMcpServer(provider: CiProvider): McpServer {
   );
   server.tool(
     'get_failure_context',
-    'Resolve a single CI run by run ID, PR, commit, or branch and build structured failure evidence.',
-    { ...repositoryShape, ...runSelectorShape },
+    'Resolve a single CI run and build structured failure evidence. sourcePolicy controls selected job-log retrieval only, not run resolution.',
+    {
+      ...repositoryShape,
+      ...runSelectorShape,
+      sourcePolicy: z
+        .enum(['prefer-cache', 'cache-only', 'refresh'])
+        .default('prefer-cache')
+        .describe(
+          'prefer-cache reuses logs, cache-only forbids remote log access, and refresh reloads selected job logs',
+        ),
+    },
     async ({
       owner,
       repository,
@@ -102,18 +111,22 @@ export function createMcpServer(provider: CiProvider): McpServer {
       conclusion,
       latest,
       limit,
+      sourcePolicy,
     }) =>
       output(
-        await handlers.getFailureContext({
-          repository: { owner, name: repository },
-          ...(runId ? { runId } : {}),
-          ...(commitSha ? { commitSha } : {}),
-          ...(pullRequestNumber !== undefined ? { pullRequestNumber } : {}),
-          ...(branch ? { branch } : {}),
-          ...(conclusion ? { conclusion } : {}),
-          ...(latest !== undefined ? { latest } : {}),
-          ...(limit !== undefined ? { limit } : {}),
-        }),
+        await handlers.getFailureContext(
+          {
+            repository: { owner, name: repository },
+            ...(runId ? { runId } : {}),
+            ...(commitSha ? { commitSha } : {}),
+            ...(pullRequestNumber !== undefined ? { pullRequestNumber } : {}),
+            ...(branch ? { branch } : {}),
+            ...(conclusion ? { conclusion } : {}),
+            ...(latest !== undefined ? { latest } : {}),
+            ...(limit !== undefined ? { limit } : {}),
+          },
+          sourcePolicy,
+        ),
       ),
   );
   return server;
