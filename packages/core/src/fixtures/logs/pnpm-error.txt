@@ -1,0 +1,4 @@
+ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL app@1.0.0 build
+ELIFECYCLE Command failed with exit code 2.
+npm ERR! Lifecycle script `build` failed
+src/index.ts(3,4): error TS2322: Type string is not assignable

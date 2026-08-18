@@ -107,6 +107,8 @@ export interface FailureEvidence {
   jobId?: string;
   stepName?: string;
   lineNumber?: number;
+  parser?: string;
+  category?: EvidenceCategory;
 }
 
 export interface FailedJobContext {
@@ -137,3 +139,4 @@ export interface CiFailureEvent {
   jobId?: string;
   occurredAt: string;
 }
+import type { EvidenceCategory } from './extraction-profiles.js';

@@ -132,6 +132,7 @@ describe('MCP server', () => {
       latest: {},
       limit: {},
       sourcePolicy: {},
+      extractionProfile: {},
     });
     await Promise.all([client.close(), server.close()]);
   });
@@ -145,6 +146,21 @@ describe('MCP server', () => {
         repository: 'app',
         runId: '7',
         sourcePolicy: 'refresh',
+      },
+    });
+    expect(result.isError).not.toBe(true);
+    await Promise.all([client.close(), server.close()]);
+  });
+
+  it('accepts an extraction profile for failure context', async () => {
+    const { client, server } = await connectedClient();
+    const result = await client.callTool({
+      name: 'get_failure_context',
+      arguments: {
+        owner: 'acme',
+        repository: 'app',
+        runId: '7',
+        extractionProfile: 'java-spring',
       },
     });
     expect(result.isError).not.toBe(true);

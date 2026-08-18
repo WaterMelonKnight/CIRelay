@@ -1,0 +1,3 @@
+setup complete
+fatal: validation crashed
+cleanup

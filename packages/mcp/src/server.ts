@@ -139,6 +139,10 @@ export function createMcpServer(provider: CiProvider): McpServer {
         .describe(
           'prefer-cache reuses logs, cache-only forbids remote log access, and refresh reloads selected job logs',
         ),
+      extractionProfile: z
+        .enum(['generic', 'java-maven', 'java-spring', 'node-pnpm'])
+        .default('generic')
+        .describe('Deterministic framework-aware evidence extraction profile'),
     },
     async ({
       owner,
@@ -151,6 +155,7 @@ export function createMcpServer(provider: CiProvider): McpServer {
       latest,
       limit,
       sourcePolicy,
+      extractionProfile,
     }) =>
       output(
         await handlers.getFailureContext(
@@ -165,6 +170,7 @@ export function createMcpServer(provider: CiProvider): McpServer {
             ...(limit !== undefined ? { limit } : {}),
           },
           sourcePolicy,
+          extractionProfile,
         ),
       ),
   );

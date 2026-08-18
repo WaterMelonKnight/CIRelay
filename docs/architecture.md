@@ -44,6 +44,37 @@ remote transport; `LogSource` owns raw-log cache and freshness policy; evidence
 extraction remains independent of both. Failure context includes PR changed files
 when the provider supports them. This is evidence, not diagnosis.
 
+Evidence extraction is layered and bounded:
+
+```text
+raw job log -> extraction profile -> deterministic framework parsers
+            -> structured evidence -> FailureContext -> coding agent
+```
+
+The default `generic` profile preserves the baseline error and stack-like matching.
+Callers can explicitly select `java-maven` (generic + Java + Maven), `java-spring`
+(generic + Java + Maven + Spring), or `node-pnpm` (generic + Node + npm/pnpm).
+Overlapping parser matches are deduplicated and emitted in source-line order with
+provider-neutral parser and category metadata. Profiles use no LLM and enrich
+code-oriented evidence; they do not diagnose a semantic root cause.
+
+```ts
+get_failure_context({
+  pullRequestNumber: 42,
+  conclusion: 'failure',
+  latest: true,
+  extractionProfile: 'java-spring',
+});
+
+get_failure_context({
+  runId: '123',
+  extractionProfile: 'node-pnpm',
+});
+```
+
+Profile selection is per request. Persistent repository configuration is deferred,
+and `search_job_logs` remains the agent-directed literal drill-down tool.
+
 ## Raw job-log retrieval
 
 The default cached log source uses a provider-neutral key consisting of provider
