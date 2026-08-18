@@ -7,6 +7,7 @@ import {
   type RepositoryRef,
   type LogSourcePolicy,
   type JobLogSearchQuery,
+  type ExtractionProfileName,
   CachedLogSource,
   MemoryJobLogCache,
   searchJobLog,
@@ -39,6 +40,7 @@ export class CiToolHandlers {
   async getFailureContext(
     query: CiRunQuery,
     sourcePolicy: LogSourcePolicy = 'prefer-cache',
+    extractionProfile: ExtractionProfileName = 'generic',
   ) {
     if (
       query.runId &&
@@ -49,12 +51,17 @@ export class CiToolHandlers {
       return buildFailureContext(
         this.provider,
         { repository: query.repository, runId: query.runId },
-        { logSourcePolicy: sourcePolicy, logSource: this.logSource },
+        {
+          logSourcePolicy: sourcePolicy,
+          logSource: this.logSource,
+          extractionProfile,
+        },
       );
     }
     return buildFailureContextForQuery(this.provider, query, {
       logSourcePolicy: sourcePolicy,
       logSource: this.logSource,
+      extractionProfile,
     });
   }
 

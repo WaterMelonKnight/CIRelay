@@ -1,0 +1,5 @@
+FAIL src/math.test.ts
+Test Files  1 failed | 2 passed
+Tests  1 failed | 4 passed
+Error: expected 2 to be 3
+    at src/math.test.ts:4:10

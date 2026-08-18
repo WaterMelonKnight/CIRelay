@@ -1,4 +1,5 @@
 import { extractLogEvidence } from './logs.js';
+import type { ExtractionProfileName } from './extraction-profiles.js';
 import type {
   CiProvider,
   FailureContext,
@@ -18,6 +19,7 @@ export interface BuildFailureContextOptions {
   logSourcePolicy?: LogSourcePolicy;
   logSource?: LogSource;
   now?: () => Date;
+  extractionProfile?: ExtractionProfileName;
 }
 
 const defaultLogSources = new WeakMap<CiProvider, LogSource>();
@@ -53,19 +55,20 @@ export async function buildFailureContext(
   const failed = jobs.filter(
     (job) => job.conclusion === 'failure' || job.conclusion === 'timed_out',
   );
-  const failedJobs = await Promise.all(
+  const parsedFailedJobs = await Promise.all(
     failed.map(async (job) => {
       const log = await logSource.getJobLog(
         { repository: input.repository, jobId: job.id },
         options.logSourcePolicy ? { policy: options.logSourcePolicy } : {},
       );
-      const parsed = extractLogEvidence(log);
+      const parsed = extractLogEvidence(log, 80, options.extractionProfile);
       return {
         job,
         failedSteps: job.steps.filter((step) => step.conclusion === 'failure'),
         logExcerpt: parsed.excerpt,
         errorLines: parsed.errorLines,
         stackTraceCandidates: parsed.stackTraceCandidates,
+        parsedEvidence: parsed.evidence,
       };
     }),
   );
@@ -76,25 +79,34 @@ export async function buildFailureContext(
           pullRequestNumber: run.pullRequest.number,
         })
       : [];
-  const evidence: FailureEvidence[] = failedJobs.flatMap(
-    ({ job, failedSteps, errorLines, stackTraceCandidates }) => [
+  const evidence: FailureEvidence[] = parsedFailedJobs.flatMap(
+    ({ job, failedSteps, parsedEvidence }) => [
       ...failedSteps.map((step) => ({
         kind: 'failed-step' as const,
         message: step.name,
         jobId: job.id,
         stepName: step.name,
       })),
-      ...errorLines.map((message) => ({
-        kind: 'error-line' as const,
-        message,
-        jobId: job.id,
-      })),
-      ...stackTraceCandidates.map((message) => ({
-        kind: 'stack-trace' as const,
-        message,
-        jobId: job.id,
-      })),
+      ...parsedEvidence.map(
+        ({ kind, message, lineNumber, parser, category }) => ({
+          kind,
+          message,
+          jobId: job.id,
+          lineNumber,
+          parser,
+          category,
+        }),
+      ),
     ],
+  );
+  const failedJobs = parsedFailedJobs.map(
+    ({ job, failedSteps, logExcerpt, errorLines, stackTraceCandidates }) => ({
+      job,
+      failedSteps,
+      logExcerpt,
+      errorLines,
+      stackTraceCandidates,
+    }),
   );
   return {
     provider: provider.name,

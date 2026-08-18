@@ -1,0 +1,4 @@
+Failed to load ApplicationContext
+org.springframework.beans.factory.BeanCreationException: Error creating bean
+Caused by: org.springframework.beans.factory.NoSuchBeanDefinitionException: missing bean
+Application run failed
