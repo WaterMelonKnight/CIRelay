@@ -26,55 +26,51 @@ This repository contains a strict TypeScript pnpm workspace with:
 
 It does **not** contain an autonomous repair agent, LLM calls, a GitHub App, production webhook delivery, a DeepSeek Harness plugin, GitLab/Jenkins support, a database/event store, or a SaaS dashboard.
 
-## Development
+## Quick start
 
 Requirements: Node.js 22+ and pnpm 10+.
 
 ```sh
+git clone https://github.com/WaterMelonKnight/CIRelay.git
+cd CIRelay
 pnpm install
-pnpm lint
-pnpm typecheck
-pnpm test
 pnpm build
 ```
 
-To start MCP after building, provide a GitHub token with read access to the target repository:
+Create a fine-grained GitHub personal access token for only the repositories CIRelay
+needs to inspect, then provide it through the environment. The value below is a
+placeholder, not a real token.
 
 ```sh
-GITHUB_TOKEN=... pnpm --filter @cirelay/mcp exec cirelay-mcp
+export GITHUB_TOKEN='<your-token>'
+pnpm smoke:github
+pnpm --filter @cirelay/mcp exec cirelay-mcp
 ```
 
-No credentials or network access are needed for tests. See [architecture](docs/architecture.md) and the [roadmap](docs/roadmap.md).
+See the [GitHub Actions provider guide](docs/providers/github.md) for token setup,
+least-privilege permissions, smoke-test overrides, security, and troubleshooting.
+The [provider documentation index](docs/providers/README.md) defines the structure
+future provider guides should follow.
 
-### Live GitHub Actions smoke test
+## Real dogfood result
 
-An opt-in smoke test exercises the real GitHub adapter and MCP handlers against
-historical failed CIRelay run `32023569355`. It retrieves the run, finds it via
-`listRuns`, retrieves failed jobs and decoded logs, and builds a
-`FailureContext` with log-derived evidence. It is deliberately separate from
-the network-independent test suite and CI.
+The live smoke test succeeded against historical failed GitHub Actions run
+[`32023569355`](https://github.com/WaterMelonKnight/CIRelay/actions/runs/32023569355)
+in this repository. It found one failed job and 21,145 characters of real CI log
+were reduced into a small structured `FailureContext` containing four pieces of
+`failed-step` and `error-line` evidence. This is evidence extraction, not a claim
+of semantic root-cause diagnosis.
 
-Build the workspace, then provide the token only through the environment:
-
-```sh
-pnpm build
-GITHUB_TOKEN=... pnpm smoke:github
-```
-
-For a fine-grained personal access token, grant access to the target repository
-with **Actions: read** and **Contents: read**. Also grant **Pull requests: read**
-when validating a pull-request run, because failure-context construction reads
-the PR's changed files when run metadata includes a PR. A classic token needs
-the `repo` scope for private repositories (or `public_repo` for public
-repositories). Organization policy or SSO authorization may impose additional
-requirements.
-
-The script never prints or persists the token. `CIRELAY_SMOKE_OWNER`,
-`CIRELAY_SMOKE_REPO`, and `CIRELAY_SMOKE_RUN_ID` can override the dogfood target.
+The smoke test targets exactly one repository and one explicit run ID; it does
+not scan repositories or historical runs. Full output and verification details
+are in the [GitHub Actions provider guide](docs/providers/github.md#real-dogfood-result).
 
 ## Status
 
-Milestone 0 is an executable foundation. GitHub run/job/log and PR-file endpoints are wired for a first-page implementation; robust pagination, API error translation, authentication guidance, and integration verification are deliberately scheduled for M1.
+Milestone 0 is an executable foundation. GitHub run/job/log and PR-file endpoints
+are wired for a first-page implementation. No credentials or network access are
+needed for the normal test suite. See the [architecture](docs/architecture.md)
+and [roadmap](docs/roadmap.md).
 
 ## License
 
