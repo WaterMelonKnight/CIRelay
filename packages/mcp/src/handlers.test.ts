@@ -137,6 +137,25 @@ describe('MCP handlers', () => {
     expect(getJobLog).toHaveBeenCalledTimes(2);
   });
 
+  it('shares raw-log cache between failure context and runtime searches', async () => {
+    const run = failedRun('7', 'head', '2026-01-01T00:00:00Z');
+    const getJobLog = vi.fn(() => Promise.resolve('Error: postgres failed'));
+    const handlers = new CiToolHandlers({
+      ...contextProvider([run]),
+      getJobLog,
+    });
+    await handlers.getFailureContext({ repository, runId: '7' });
+    await expect(
+      handlers.searchJobLogs({
+        repository,
+        jobId: 'job-7',
+        patterns: ['postgres'],
+        sourcePolicy: 'cache-only',
+      }),
+    ).resolves.toMatchObject({ matchCount: 1 });
+    expect(getJobLog).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     ['commit SHA', { commitSha: 'head', latest: true }],
     ['branch', { branch: 'main', latest: true }],

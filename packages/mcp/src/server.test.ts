@@ -37,6 +37,85 @@ async function connectedClient() {
 }
 
 describe('MCP server', () => {
+  it('advertises bounded runtime log-search inputs', async () => {
+    const { client, server } = await connectedClient();
+    const tool = (await client.listTools()).tools.find(
+      ({ name }) => name === 'search_job_logs',
+    );
+
+    expect(tool?.description).toContain('runtime patterns');
+    expect(tool?.inputSchema.required).toEqual([
+      'owner',
+      'repository',
+      'jobId',
+      'patterns',
+    ]);
+    expect(tool?.inputSchema.properties).toMatchObject({
+      excludePatterns: {},
+      contextBefore: {},
+      contextAfter: {},
+      maxMatches: {},
+      sourcePolicy: {},
+    });
+    await Promise.all([client.close(), server.close()]);
+  });
+
+  it('transports structured runtime log-search results', async () => {
+    const searchProvider = {
+      ...provider,
+      getJobLog: () => Promise.resolve('ready\nPostgres failed'),
+    };
+    const server = createMcpServer(searchProvider);
+    const client = new Client({ name: 'test', version: '1.0.0' });
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
+    const result = await client.callTool({
+      name: 'search_job_logs',
+      arguments: {
+        owner: 'acme',
+        repository: 'app',
+        jobId: '123',
+        patterns: ['postgres'],
+      },
+    });
+
+    expect(result.isError).not.toBe(true);
+    const text =
+      (result.content as Array<{ type: string; text: string }>)[0]?.text ?? '';
+    expect(JSON.parse(text)).toMatchObject({
+      jobId: '123',
+      sourcePolicy: 'prefer-cache',
+      matchCount: 1,
+      matches: [
+        {
+          lineNumber: 2,
+          line: 'Postgres failed',
+          matchedPatterns: ['postgres'],
+        },
+      ],
+    });
+    await Promise.all([client.close(), server.close()]);
+  });
+
+  it('rejects invalid runtime search inputs at the MCP boundary', async () => {
+    const { client, server } = await connectedClient();
+    const result = await client.callTool({
+      name: 'search_job_logs',
+      arguments: {
+        owner: 'acme',
+        repository: 'app',
+        jobId: '123',
+        patterns: [],
+      },
+    });
+    expect(result.isError).toBe(true);
+    await Promise.all([client.close(), server.close()]);
+  });
+
   it('advertises query selectors without requiring runId', async () => {
     const { client, server } = await connectedClient();
     const tool = (await client.listTools()).tools.find(
