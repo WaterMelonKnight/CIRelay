@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildFailureContext,
+  buildFailureContextForQuery,
   extractLogEvidence,
   type CiProvider,
   type CiRun,
@@ -62,4 +63,24 @@ describe('failure context', () => {
     expect(
       extractLogEvidence('setup\nFAILURE: boom\ncleanup').errorLines,
     ).toEqual(['FAILURE: boom']));
+
+  it('preserves query-resolved PR metadata for changed-file lookup', async () => {
+    const queryProvider: CiProvider = {
+      ...provider,
+      getPullRequest: () =>
+        Promise.resolve({ number: 42, headSha: 'abc', baseSha: 'base' }),
+      getPullRequestDiff: () =>
+        Promise.resolve([{ path: 'src/failure.ts', status: 'modified' }]),
+    };
+    await expect(
+      buildFailureContextForQuery(queryProvider, {
+        repository: run.repository,
+        pullRequestNumber: 42,
+        latest: true,
+      }),
+    ).resolves.toMatchObject({
+      pullRequest: { number: 42, headSha: 'abc' },
+      changedFiles: [{ path: 'src/failure.ts' }],
+    });
+  });
 });

@@ -1,5 +1,7 @@
 import {
   buildFailureContext,
+  resolveRuns,
+  type CiRunQuery,
   type CiProvider,
   type RepositoryRef,
 } from '@cirelay/core';
@@ -12,6 +14,9 @@ export class CiToolHandlers {
       ...(commitSha ? { commitSha } : {}),
       limit: 20,
     });
+  }
+  async listCiRuns(query: CiRunQuery) {
+    return resolveRuns(this.provider, query);
   }
   async listFailedJobs(repository: RepositoryRef, runId: string) {
     return (await this.provider.listJobs({ repository, runId })).filter(

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GitHubActionsProvider, type GitHubRequester } from './index.js';
 
 describe('GitHubActionsProvider', () => {
@@ -111,5 +111,41 @@ describe('GitHubActionsProvider', () => {
     ).resolves.toMatchObject({
       pullRequest: { number: 42, headSha: 'pr-head', baseSha: 'pr-base' },
     });
+  });
+
+  it('uses GitHub server-side branch and conclusion filters', async () => {
+    const request = vi.fn().mockResolvedValue({ data: { workflow_runs: [] } });
+    const provider = new GitHubActionsProvider({ request });
+    await provider.listRuns({
+      repository: { owner: 'a', name: 'b' },
+      branch: 'feature/foo',
+      conclusion: 'failure',
+      limit: 5,
+    });
+    expect(request).toHaveBeenCalledWith(
+      'GET /repos/{owner}/{repo}/actions/runs',
+      expect.objectContaining({
+        branch: 'feature/foo',
+        status: 'failure',
+        per_page: 5,
+      }),
+    );
+  });
+
+  it('resolves pull request head and base SHAs from the pull endpoint', async () => {
+    const request = vi.fn().mockResolvedValue({
+      data: { number: 42, head: { sha: 'head' }, base: { sha: 'base' } },
+    });
+    const provider = new GitHubActionsProvider({ request });
+    await expect(
+      provider.getPullRequest({
+        repository: { owner: 'a', name: 'b' },
+        pullRequestNumber: 42,
+      }),
+    ).resolves.toEqual({ number: 42, headSha: 'head', baseSha: 'base' });
+    expect(request).toHaveBeenCalledWith(
+      'GET /repos/{owner}/{repo}/pulls/{pull_number}',
+      expect.objectContaining({ pull_number: 42 }),
+    );
   });
 });

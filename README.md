@@ -20,7 +20,7 @@ This repository contains a strict TypeScript pnpm workspace with:
 
 - provider-neutral domain and failure-context construction in `@cirelay/core`;
 - the first `CiProvider`, an Octokit-backed GitHub Actions adapter;
-- an official-SDK MCP stdio server with `get_ci_status`, `list_failed_jobs`, `get_job_log`, and `get_failure_context`;
+- an official-SDK MCP stdio server with `list_ci_runs`, `get_ci_status`, `list_failed_jobs`, `get_job_log`, and `get_failure_context`;
 - a minimal CLI and webhook-server skeleton;
 - fixture/mocked tests and project CI.
 
@@ -70,7 +70,9 @@ are in the [GitHub Actions provider guide](docs/providers/github.md#real-dogfood
 Milestone 0 is an executable foundation. GitHub run/job/log and PR-file endpoints
 are wired for a first-page implementation. No credentials or network access are
 needed for the normal test suite. See the [architecture](docs/architecture.md)
-and [roadmap](docs/roadmap.md).
+and [run-query semantics](docs/run-queries.md). Queries may use a precise run ID
+or agent-friendly PR, commit, and branch selectors, including the latest failed
+matching run.
 
 ## License
 

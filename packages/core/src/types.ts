@@ -67,7 +67,16 @@ export interface ChangedFile {
 export interface ListRunsInput {
   repository: RepositoryRef;
   commitSha?: string;
+  branch?: string;
+  conclusion?: CiConclusion;
   limit?: number;
+}
+
+/** Provider-neutral selectors used to locate CI runs. */
+export interface CiRunQuery extends ListRunsInput {
+  runId?: string;
+  pullRequestNumber?: number;
+  latest?: boolean;
 }
 export interface RunInput {
   repository: RepositoryRef;
@@ -88,6 +97,7 @@ export interface CiProvider {
   getRun(input: RunInput): Promise<CiRun>;
   listJobs(input: RunInput): Promise<CiJob[]>;
   getJobLog(input: JobInput): Promise<string>;
+  getPullRequest?(input: PullRequestInput): Promise<PullRequestRef>;
   getPullRequestDiff?(input: PullRequestInput): Promise<ChangedFile[]>;
 }
 

@@ -8,6 +8,7 @@ import type {
   JobInput,
   ListRunsInput,
   PullRequestInput,
+  PullRequestRef,
   RunInput,
 } from '@cirelay/core';
 import { Octokit } from 'octokit';
@@ -64,12 +65,35 @@ export class GitHubActionsProvider implements CiProvider {
         owner: input.repository.owner,
         repo: input.repository.name,
         ...(input.commitSha ? { head_sha: input.commitSha } : {}),
+        ...(input.branch ? { branch: input.branch } : {}),
+        ...(input.conclusion && input.conclusion !== 'unknown'
+          ? { status: input.conclusion }
+          : {}),
         per_page: input.limit ?? 30,
       },
     );
     return array(object(data).workflow_runs).map((item) =>
       this.mapRun(object(item), input.repository),
     );
+  }
+
+  async getPullRequest(input: PullRequestInput): Promise<PullRequestRef> {
+    const { data } = await this.client.request(
+      'GET /repos/{owner}/{repo}/pulls/{pull_number}',
+      {
+        owner: input.repository.owner,
+        repo: input.repository.name,
+        pull_number: input.pullRequestNumber,
+      },
+    );
+    const pull = object(data);
+    return {
+      number: Number(pull.number),
+      headSha: text(object(pull.head).sha),
+      ...(text(object(pull.base).sha)
+        ? { baseSha: text(object(pull.base).sha) }
+        : {}),
+    };
   }
 
   async getRun(input: RunInput): Promise<CiRun> {

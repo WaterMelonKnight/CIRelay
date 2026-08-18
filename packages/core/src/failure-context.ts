@@ -4,7 +4,9 @@ import type {
   FailureContext,
   FailureEvidence,
   RunInput,
+  CiRunQuery,
 } from './types.js';
+import { resolveSingleRun } from './run-resolution.js';
 
 export async function buildFailureContext(
   provider: CiProvider,
@@ -72,4 +74,25 @@ export async function buildFailureContext(
     evidence,
     generatedAt: now().toISOString(),
   };
+}
+
+export async function buildFailureContextForQuery(
+  provider: CiProvider,
+  query: CiRunQuery,
+  now = () => new Date(),
+): Promise<FailureContext> {
+  const run = await resolveSingleRun(provider, query);
+  const context = await buildFailureContext(
+    provider,
+    { repository: query.repository, runId: run.id },
+    now,
+  );
+  if (!run.pullRequest || context.pullRequest) return context;
+  const changedFiles = provider.getPullRequestDiff
+    ? await provider.getPullRequestDiff({
+        repository: query.repository,
+        pullRequestNumber: run.pullRequest.number,
+      })
+    : [];
+  return { ...context, pullRequest: run.pullRequest, changedFiles };
 }
