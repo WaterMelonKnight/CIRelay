@@ -23,7 +23,14 @@ flowchart LR
 - `packages/cli`: deliberately small command entry point.
 - `apps/webhook-server`: future push-mode boundary. M0 provides health behavior and provider-event parsing, but no signature verification or delivery endpoint.
 
-## Failure context
+## Run resolution and failure context
+
+Core owns provider-neutral `CiRunQuery` validation, deterministic run ordering,
+and selection. Providers expose only primitives: exact run lookup, filtered run
+listing, and (optionally) pull-request reference lookup. For GitHub, PR lookup
+produces a head SHA before Actions runs are listed; MCP merely transports the
+neutral query. Detailed ordering and ambiguity rules are documented in
+[CI run queries](run-queries.md).
 
 `buildFailureContext` loads a neutral run and its jobs, selects failed jobs, collects their logs, and extracts error lines and stack-like candidates using deterministic patterns. It includes PR changed files when the provider supports them. This is evidence, not diagnosis.
 

@@ -35,4 +35,31 @@ describe('MCP handlers', () => {
         '2',
       ),
     ).toMatchObject([{ id: '3' }]));
+
+  it('exposes provider-neutral run queries', async () => {
+    const queriedProvider: CiProvider = {
+      ...provider,
+      listRuns: () =>
+        Promise.resolve([
+          {
+            id: '7',
+            provider: 'test',
+            repository: { owner: 'a', name: 'b' },
+            name: 'CI',
+            commit: { sha: 'head' },
+            status: 'completed',
+            conclusion: 'failure',
+            createdAt: '2026-01-01T00:00:00Z',
+            updatedAt: '2026-01-01T00:00:00Z',
+          },
+        ]),
+    };
+    await expect(
+      new CiToolHandlers(queriedProvider).listCiRuns({
+        repository: { owner: 'a', name: 'b' },
+        branch: 'main',
+        latest: true,
+      }),
+    ).resolves.toMatchObject([{ id: '7' }]);
+  });
 });

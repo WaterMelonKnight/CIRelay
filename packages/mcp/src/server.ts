@@ -16,6 +16,53 @@ export function createMcpServer(provider: CiProvider): McpServer {
   const server = new McpServer({ name: 'cirelay', version: '0.1.0' });
   const handlers = new CiToolHandlers(provider);
   server.tool(
+    'list_ci_runs',
+    'Resolve CI runs by exact ID, pull request, commit, or branch',
+    {
+      ...repositoryShape,
+      runId: z.string().min(1).optional(),
+      commitSha: z.string().min(1).optional(),
+      pullRequestNumber: z.number().int().positive().optional(),
+      branch: z.string().min(1).optional(),
+      conclusion: z
+        .enum([
+          'success',
+          'failure',
+          'cancelled',
+          'skipped',
+          'neutral',
+          'timed_out',
+          'action_required',
+        ])
+        .optional(),
+      latest: z.boolean().optional(),
+      limit: z.number().int().positive().max(100).optional(),
+    },
+    async ({
+      owner,
+      repository,
+      runId,
+      commitSha,
+      pullRequestNumber,
+      branch,
+      conclusion,
+      latest,
+      limit,
+    }) =>
+      output(
+        await handlers.listCiRuns({
+          repository: { owner, name: repository },
+          ...(runId ? { runId } : {}),
+          ...(commitSha ? { commitSha } : {}),
+          ...(pullRequestNumber !== undefined ? { pullRequestNumber } : {}),
+          ...(branch ? { branch } : {}),
+          ...(conclusion ? { conclusion } : {}),
+          ...(latest !== undefined ? { latest } : {}),
+          ...(limit !== undefined ? { limit } : {}),
+        }),
+      ),
+  );
+  server.tool(
     'get_ci_status',
     'List recent CI runs, optionally for a commit',
     { ...repositoryShape, commitSha: z.string().optional() },
