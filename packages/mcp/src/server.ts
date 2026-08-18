@@ -89,6 +89,45 @@ export function createMcpServer(provider: CiProvider): McpServer {
       output(await handlers.getJobLog({ owner, name: repository }, jobId)),
   );
   server.tool(
+    'search_job_logs',
+    "Search a CI job's raw log with agent-supplied runtime patterns, reusing cached logs when possible.",
+    {
+      ...repositoryShape,
+      jobId: z.string().min(1),
+      patterns: z.array(z.string().min(1).max(200)).min(1).max(20),
+      excludePatterns: z.array(z.string().min(1).max(200)).max(20).optional(),
+      contextBefore: z.number().int().min(0).max(20).optional(),
+      contextAfter: z.number().int().min(0).max(20).optional(),
+      maxMatches: z.number().int().min(1).max(100).optional(),
+      sourcePolicy: z
+        .enum(['prefer-cache', 'cache-only', 'refresh'])
+        .default('prefer-cache'),
+    },
+    async ({
+      owner,
+      repository,
+      jobId,
+      patterns,
+      excludePatterns,
+      contextBefore,
+      contextAfter,
+      maxMatches,
+      sourcePolicy,
+    }) =>
+      output(
+        await handlers.searchJobLogs({
+          repository: { owner, name: repository },
+          jobId,
+          patterns,
+          ...(excludePatterns ? { excludePatterns } : {}),
+          ...(contextBefore !== undefined ? { contextBefore } : {}),
+          ...(contextAfter !== undefined ? { contextAfter } : {}),
+          ...(maxMatches !== undefined ? { maxMatches } : {}),
+          sourcePolicy,
+        }),
+      ),
+  );
+  server.tool(
     'get_failure_context',
     'Resolve a single CI run and build structured failure evidence. sourcePolicy controls selected job-log retrieval only, not run resolution.',
     {

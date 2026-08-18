@@ -6,10 +6,18 @@ import {
   type CiProvider,
   type RepositoryRef,
   type LogSourcePolicy,
+  type JobLogSearchQuery,
+  CachedLogSource,
+  MemoryJobLogCache,
+  searchJobLog,
 } from '@cirelay/core';
 
 export class CiToolHandlers {
-  constructor(private readonly provider: CiProvider) {}
+  private readonly logSource;
+
+  constructor(private readonly provider: CiProvider) {
+    this.logSource = new CachedLogSource(provider, new MemoryJobLogCache());
+  }
   async getCiStatus(repository: RepositoryRef, commitSha?: string) {
     return this.provider.listRuns({
       repository,
@@ -41,11 +49,16 @@ export class CiToolHandlers {
       return buildFailureContext(
         this.provider,
         { repository: query.repository, runId: query.runId },
-        { logSourcePolicy: sourcePolicy },
+        { logSourcePolicy: sourcePolicy, logSource: this.logSource },
       );
     }
     return buildFailureContextForQuery(this.provider, query, {
       logSourcePolicy: sourcePolicy,
+      logSource: this.logSource,
     });
+  }
+
+  async searchJobLogs(query: JobLogSearchQuery) {
+    return searchJobLog(this.logSource, query);
   }
 }
