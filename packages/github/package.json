@@ -1,6 +1,6 @@
 {
   "name": "@cirelay/github",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "description": "GitHub Actions provider adapter for CIRelay",
   "license": "Apache-2.0",
   "repository": {
@@ -39,7 +39,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@cirelay/core": "workspace:*",
+    "@cirelay/core": "workspace:0.1.0-alpha.1",
     "octokit": "^4.0.0"
   }
 }
