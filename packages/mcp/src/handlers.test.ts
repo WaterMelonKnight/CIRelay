@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { CiProvider, CiRun } from '@cirelay/core';
 import { CiToolHandlers } from './handlers.js';
 
@@ -123,6 +123,18 @@ describe('MCP handlers', () => {
       }),
     ).resolves.toMatchObject({ run: { id: '7' }, failedJobs: [{ job: {} }] });
     expect(listCalls).toBe(0);
+  });
+
+  it('accepts source policy for failure-context log retrieval', async () => {
+    const run = failedRun('7', 'head', '2026-01-01T00:00:00Z');
+    const getJobLog = vi.fn(() => Promise.resolve('Error: fresh'));
+    const policyProvider = { ...contextProvider([run]), getJobLog };
+    const handlers = new CiToolHandlers(policyProvider);
+    const query = { repository, runId: '7' };
+
+    await handlers.getFailureContext(query);
+    await handlers.getFailureContext(query, 'refresh');
+    expect(getJobLog).toHaveBeenCalledTimes(2);
   });
 
   it.each([

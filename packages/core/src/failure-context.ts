@@ -7,12 +7,45 @@ import type {
   CiRunQuery,
 } from './types.js';
 import { resolveSingleRun } from './run-resolution.js';
+import {
+  CachedLogSource,
+  MemoryJobLogCache,
+  type LogSource,
+  type LogSourcePolicy,
+} from './log-source.js';
+
+export interface BuildFailureContextOptions {
+  logSourcePolicy?: LogSourcePolicy;
+  logSource?: LogSource;
+  now?: () => Date;
+}
+
+const defaultLogSources = new WeakMap<CiProvider, LogSource>();
+
+function getDefaultLogSource(provider: CiProvider): LogSource {
+  const existing = defaultLogSources.get(provider);
+  if (existing) return existing;
+  const source = new CachedLogSource(provider, new MemoryJobLogCache());
+  defaultLogSources.set(provider, source);
+  return source;
+}
+
+function normalizeOptions(
+  nowOrOptions: (() => Date) | BuildFailureContextOptions | undefined,
+): BuildFailureContextOptions {
+  return typeof nowOrOptions === 'function'
+    ? { now: nowOrOptions }
+    : (nowOrOptions ?? {});
+}
 
 export async function buildFailureContext(
   provider: CiProvider,
   input: RunInput,
-  now = () => new Date(),
+  nowOrOptions: (() => Date) | BuildFailureContextOptions = {},
 ): Promise<FailureContext> {
+  const options = normalizeOptions(nowOrOptions);
+  const now = options.now ?? (() => new Date());
+  const logSource = options.logSource ?? getDefaultLogSource(provider);
   const [run, jobs] = await Promise.all([
     provider.getRun(input),
     provider.listJobs(input),
@@ -22,10 +55,10 @@ export async function buildFailureContext(
   );
   const failedJobs = await Promise.all(
     failed.map(async (job) => {
-      const log = await provider.getJobLog({
-        repository: input.repository,
-        jobId: job.id,
-      });
+      const log = await logSource.getJobLog(
+        { repository: input.repository, jobId: job.id },
+        options.logSourcePolicy ? { policy: options.logSourcePolicy } : {},
+      );
       const parsed = extractLogEvidence(log);
       return {
         job,
@@ -79,13 +112,14 @@ export async function buildFailureContext(
 export async function buildFailureContextForQuery(
   provider: CiProvider,
   query: CiRunQuery,
-  now = () => new Date(),
+  nowOrOptions: (() => Date) | BuildFailureContextOptions = {},
 ): Promise<FailureContext> {
+  const options = normalizeOptions(nowOrOptions);
   const run = await resolveSingleRun(provider, query);
   const context = await buildFailureContext(
     provider,
     { repository: query.repository, runId: run.id },
-    now,
+    options,
   );
   if (!run.pullRequest || context.pullRequest) return context;
   const changedFiles = provider.getPullRequestDiff

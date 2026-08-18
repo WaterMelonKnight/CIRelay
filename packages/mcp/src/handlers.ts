@@ -5,6 +5,7 @@ import {
   type CiRunQuery,
   type CiProvider,
   type RepositoryRef,
+  type LogSourcePolicy,
 } from '@cirelay/core';
 
 export class CiToolHandlers {
@@ -27,18 +28,24 @@ export class CiToolHandlers {
   async getJobLog(repository: RepositoryRef, jobId: string) {
     return this.provider.getJobLog({ repository, jobId });
   }
-  async getFailureContext(query: CiRunQuery) {
+  async getFailureContext(
+    query: CiRunQuery,
+    sourcePolicy: LogSourcePolicy = 'prefer-cache',
+  ) {
     if (
       query.runId &&
       query.commitSha === undefined &&
       query.pullRequestNumber === undefined &&
       query.branch === undefined
     ) {
-      return buildFailureContext(this.provider, {
-        repository: query.repository,
-        runId: query.runId,
-      });
+      return buildFailureContext(
+        this.provider,
+        { repository: query.repository, runId: query.runId },
+        { logSourcePolicy: sourcePolicy },
+      );
     }
-    return buildFailureContextForQuery(this.provider, query);
+    return buildFailureContextForQuery(this.provider, query, {
+      logSourcePolicy: sourcePolicy,
+    });
   }
 }
