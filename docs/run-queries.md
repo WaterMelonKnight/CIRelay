@@ -27,17 +27,34 @@ filter by a provider-neutral conclusion or select the latest match.
   with stable domain codes.
 
 The MCP `list_ci_runs` tool exposes this query subset and returns neutral
-`CiRun` values. Existing tools that accept an explicit run ID remain available.
+`CiRun` values for exploration. `get_failure_context` is the high-level shortcut:
+it resolves exactly one run with the same selectors and returns its structured
+failure evidence. An explicit `runId` remains supported and uses direct lookup.
+If a query has multiple matches, callers must disambiguate it (for example with
+`latest: true`); CIRelay does not silently choose a run or add conclusion/latest
+defaults.
 
 ## Agent flow
 
-For “Analyze the latest failed CI for PR #42,” the flow is:
+For the user request “Analyze the latest failed CI for PR #42,” an agent makes
+one call:
+
+```ts
+get_failure_context({
+  pullRequestNumber: 42,
+  conclusion: 'failure',
+  latest: true,
+});
+```
+
+The resulting flow is:
 
 ```text
 PR #42
   -> provider-neutral PR head reference
   -> runs matching the head SHA and failure conclusion
   -> deterministic latest run
+  -> failed jobs and failed-job logs
   -> FailureContext
 ```
 

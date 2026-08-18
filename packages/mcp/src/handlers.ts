@@ -1,5 +1,6 @@
 import {
   buildFailureContext,
+  buildFailureContextForQuery,
   resolveRuns,
   type CiRunQuery,
   type CiProvider,
@@ -26,7 +27,18 @@ export class CiToolHandlers {
   async getJobLog(repository: RepositoryRef, jobId: string) {
     return this.provider.getJobLog({ repository, jobId });
   }
-  async getFailureContext(repository: RepositoryRef, runId: string) {
-    return buildFailureContext(this.provider, { repository, runId });
+  async getFailureContext(query: CiRunQuery) {
+    if (
+      query.runId &&
+      query.commitSha === undefined &&
+      query.pullRequestNumber === undefined &&
+      query.branch === undefined
+    ) {
+      return buildFailureContext(this.provider, {
+        repository: query.repository,
+        runId: query.runId,
+      });
+    }
+    return buildFailureContextForQuery(this.provider, query);
   }
 }

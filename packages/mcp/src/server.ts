@@ -8,6 +8,25 @@ const repositoryShape = {
   owner: z.string().min(1),
   repository: z.string().min(1),
 };
+const runSelectorShape = {
+  runId: z.string().min(1).optional(),
+  commitSha: z.string().min(1).optional(),
+  pullRequestNumber: z.number().int().positive().optional(),
+  branch: z.string().min(1).optional(),
+  conclusion: z
+    .enum([
+      'success',
+      'failure',
+      'cancelled',
+      'skipped',
+      'neutral',
+      'timed_out',
+      'action_required',
+    ])
+    .optional(),
+  latest: z.boolean().optional(),
+  limit: z.number().int().positive().max(100).optional(),
+};
 const output = (value: unknown) => ({
   content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }],
 });
@@ -17,26 +36,10 @@ export function createMcpServer(provider: CiProvider): McpServer {
   const handlers = new CiToolHandlers(provider);
   server.tool(
     'list_ci_runs',
-    'Resolve CI runs by exact ID, pull request, commit, or branch',
+    'Explore or resolve CI runs by run ID, PR, commit, or branch.',
     {
       ...repositoryShape,
-      runId: z.string().min(1).optional(),
-      commitSha: z.string().min(1).optional(),
-      pullRequestNumber: z.number().int().positive().optional(),
-      branch: z.string().min(1).optional(),
-      conclusion: z
-        .enum([
-          'success',
-          'failure',
-          'cancelled',
-          'skipped',
-          'neutral',
-          'timed_out',
-          'action_required',
-        ])
-        .optional(),
-      latest: z.boolean().optional(),
-      limit: z.number().int().positive().max(100).optional(),
+      ...runSelectorShape,
     },
     async ({
       owner,
@@ -87,11 +90,30 @@ export function createMcpServer(provider: CiProvider): McpServer {
   );
   server.tool(
     'get_failure_context',
-    'Build deterministic structured failure context',
-    { ...repositoryShape, runId: z.string() },
-    async ({ owner, repository, runId }) =>
+    'Resolve a single CI run by run ID, PR, commit, or branch and build structured failure evidence.',
+    { ...repositoryShape, ...runSelectorShape },
+    async ({
+      owner,
+      repository,
+      runId,
+      commitSha,
+      pullRequestNumber,
+      branch,
+      conclusion,
+      latest,
+      limit,
+    }) =>
       output(
-        await handlers.getFailureContext({ owner, name: repository }, runId),
+        await handlers.getFailureContext({
+          repository: { owner, name: repository },
+          ...(runId ? { runId } : {}),
+          ...(commitSha ? { commitSha } : {}),
+          ...(pullRequestNumber !== undefined ? { pullRequestNumber } : {}),
+          ...(branch ? { branch } : {}),
+          ...(conclusion ? { conclusion } : {}),
+          ...(latest !== undefined ? { latest } : {}),
+          ...(limit !== undefined ? { limit } : {}),
+        }),
       ),
   );
   return server;
