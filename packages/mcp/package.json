@@ -1,6 +1,32 @@
 {
   "name": "@cirelay/mcp",
   "version": "0.1.0",
+  "description": "Local stdio MCP server exposing GitHub Actions failure context to coding agents",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WaterMelonKnight/CIRelay.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://github.com/WaterMelonKnight/CIRelay#readme",
+  "bugs": "https://github.com/WaterMelonKnight/CIRelay/issues",
+  "keywords": [
+    "ci",
+    "mcp",
+    "github-actions",
+    "coding-agents"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "bin": {
     "cirelay-mcp": "./dist/main.js"

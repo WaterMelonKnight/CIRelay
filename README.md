@@ -1,82 +1,129 @@
 # CIRelay
 
-**CI feedback infrastructure for AI coding agents.**
+**CI feedback infrastructure for coding agents.**
 
-CIRelay turns CI failures into structured context and events that AI coding agents can understand and act on. It collects provider data, normalizes runs and jobs, reduces noisy logs, and exposes deterministic evidence. CIRelay is not another autonomous agent and does not put an LLM in its core path.
+CIRelay gives an external coding agent provider-neutral, structured evidence about CI failures. It resolves GitHub Actions runs from a pull request, commit, or branch; retrieves failed jobs and logs; and reduces noisy logs into `FailureContext`. Extraction is deterministic and framework-aware, while `search_job_logs` lets an agent test its own hypotheses. Repository policy can live in [`.cirelay.yml`](docs/configuration.md).
 
-Repositories can define bounded, deterministic evidence policy in [`.cirelay.yml`](docs/configuration.md).
+CIRelay is infrastructure—not a generic log platform, autonomous coding agent, LLM wrapper, or hosted service.
 
-## Interaction modes
+## How CIRelay runs today
 
-**Pull mode (Milestone 0):** `Agent -> MCP -> CIRelay -> CI provider`
+```text
+Coding agent
+    |
+    | stdio MCP
+    v
+CIRelay MCP process
+    |
+    | GitHub API
+    v
+GitHub Actions
+```
 
-An agent asks CIRelay for CI status, failed jobs, logs, or a complete failure context through a local stdio MCP server.
+The MCP process runs locally, in the same development environment or sandbox as the coding agent: for example, a developer laptop, Codespace, dev container, or cloud coding-agent sandbox with GitHub API network access. GitHub Actions is currently the only implemented provider. A hosted or remote deployment model is future work.
 
-**Push mode (future):** `CI provider -> webhook/event -> CIRelay -> agent adapter`
+## Source-checkout quick start
 
-Provider events will become neutral failure events and contexts for later delivery. The webhook application currently only establishes this boundary and a health endpoint.
-
-## Milestone 0
-
-This repository contains a strict TypeScript pnpm workspace with:
-
-- provider-neutral domain and failure-context construction in `@cirelay/core`;
-- the first `CiProvider`, an Octokit-backed GitHub Actions adapter;
-- an official-SDK MCP stdio server with `list_ci_runs`, `get_ci_status`, `list_failed_jobs`, `get_job_log`, and `get_failure_context`;
-- a minimal CLI and webhook-server skeleton;
-- fixture/mocked tests and project CI.
-
-It does **not** contain an autonomous repair agent, LLM calls, a GitHub App, production webhook delivery, a DeepSeek Harness plugin, GitLab/Jenkins support, a database/event store, or a SaaS dashboard.
-
-## Quick start
-
-Requirements: Node.js 22+ and pnpm 10+.
+CIRelay requires **Node.js 22 or newer**, as declared by the workspace engines configuration. Corepack supplies the pinned pnpm version.
 
 ```sh
 git clone https://github.com/WaterMelonKnight/CIRelay.git
 cd CIRelay
-pnpm install
+corepack enable
+pnpm install --frozen-lockfile
 pnpm build
-```
-
-Create a fine-grained GitHub personal access token for only the repositories CIRelay
-needs to inspect, then provide it through the environment. The value below is a
-placeholder, not a real token.
-
-```sh
 export GITHUB_TOKEN='<your-token>'
-pnpm smoke:github
-pnpm --filter @cirelay/mcp exec cirelay-mcp
+node packages/mcp/dist/main.js
 ```
 
-See the [GitHub Actions provider guide](docs/providers/github.md) for token setup,
-least-privilege permissions, smoke-test overrides, security, and troubleshooting.
-The [provider documentation index](docs/providers/README.md) defines the structure
-future provider guides should follow.
+The final command starts the stdio MCP server and waits for an MCP client; it is not an interactive shell. The intended package UX after publication is `npx @cirelay/mcp`, but no package has been published by this repository yet.
 
-## Real dogfood result
+### GitHub token permissions
 
-The live smoke test succeeded against historical failed GitHub Actions run
-[`32023569355`](https://github.com/WaterMelonKnight/CIRelay/actions/runs/32023569355)
-in this repository. It found one failed job and 21,145 characters of real CI log
-were reduced into a small structured `FailureContext` containing four pieces of
-`failed-step` and `error-line` evidence. This is evidence extraction, not a claim
-of semantic root-cause diagnosis.
+Prefer a fine-grained personal access token limited to the repositories CIRelay may inspect. Set it only through the `GITHUB_TOKEN` environment variable; never commit it. Grant these repository permissions:
 
-The smoke test targets exactly one repository and one explicit run ID; it does
-not scan repositories or historical runs. Full output and verification details
-are in the [GitHub Actions provider guide](docs/providers/github.md#real-dogfood-result).
+- **Actions: read** for workflow runs, jobs, and logs;
+- **Pull requests: read** for PR metadata and changed-file context;
+- **Contents: read** to load `.cirelay.yml` from the resolved commit.
 
-## Status
+See the [GitHub provider guide](docs/providers/github.md) for details and troubleshooting.
 
-Milestone 0 is an executable foundation. GitHub run/job/log and PR-file endpoints
-are wired for a first-page implementation. No credentials or network access are
-needed for the normal test suite. See the [architecture](docs/architecture.md)
-and [run-query semantics](docs/run-queries.md). Queries may use a precise run ID
-or agent-friendly PR, commit, and branch selectors, including the latest failed
-matching run. Agents can explore matches with `list_ci_runs` or retrieve a
-single structured result directly with `get_failure_context`; precise `runId`
-calls remain supported.
+## Connect an MCP client
+
+A generic stdio MCP configuration for a built source checkout is:
+
+```json
+{
+  "mcpServers": {
+    "cirelay": {
+      "command": "node",
+      "args": ["/absolute/path/to/CIRelay/packages/mcp/dist/main.js"],
+      "env": {
+        "GITHUB_TOKEN": "<your-token>"
+      }
+    }
+  }
+}
+```
+
+Replace the absolute path and token placeholder. An absolute path avoids relying on client-specific working-directory support. Configuration shape and location vary by MCP client, so consult the client's documentation.
+
+## Investigate a failure
+
+Ask the agent to “Investigate why PR #42 failed.” It can first call `get_failure_context` for broad deterministic extraction:
+
+```json
+{
+  "owner": "acme",
+  "repository": "payments",
+  "pullRequestNumber": 42,
+  "conclusion": "failure",
+  "latest": true,
+  "extractionProfile": "java-spring"
+}
+```
+
+The profile is optional. A repository can select it automatically with a compact `.cirelay.yml` policy:
+
+```yaml
+version: 1
+extractionProfile: java-spring
+
+logExtraction:
+  include:
+    - 'connection refused'
+  exclude:
+    - 'Known harmless warning'
+```
+
+Keep configuration details in the [configuration reference](docs/configuration.md).
+
+The agent can then drill into a failed job with repeated `search_job_logs` calls:
+
+```json
+{
+  "owner": "acme",
+  "repository": "payments",
+  "jobId": "123456789",
+  "patterns": ["postgres", "5432", "connection refused"],
+  "sourcePolicy": "prefer-cache"
+}
+```
+
+`get_failure_context` broadly extracts bounded evidence; `search_job_logs` searches for agent-directed literal patterns. With `prefer-cache`, repeated searches in the same MCP process can reuse its cached raw log.
+
+## Dogfooding
+
+CIRelay has been exercised against a real failed GitHub Actions run from this repository; see the [recorded smoke-test details](docs/providers/github.md#real-dogfood-result). CIRelay can reduce a failed job's raw CI log into structured evidence, then let an agent drill down with `search_job_logs`. This is deterministic evidence extraction, not automated semantic root-cause diagnosis.
+
+## Current limitations
+
+- GitHub Actions is the implemented CI provider, and MCP uses local stdio only.
+- Raw-log caching is process-local and ephemeral.
+- There is no hosted CIRelay service, GitHub App, webhook delivery, or persistent failure history yet.
+- No LLM is required in the CIRelay core path.
+
+Normal tests use fixtures and injected clients and require neither GitHub nor npm credentials. For architecture and query details, see [architecture](docs/architecture.md) and [run-query semantics](docs/run-queries.md).
 
 ## License
 

@@ -1,6 +1,32 @@
 {
   "name": "@cirelay/github",
   "version": "0.1.0",
+  "description": "GitHub Actions provider adapter for CIRelay",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WaterMelonKnight/CIRelay.git",
+    "directory": "packages/github"
+  },
+  "homepage": "https://github.com/WaterMelonKnight/CIRelay#readme",
+  "bugs": "https://github.com/WaterMelonKnight/CIRelay/issues",
+  "keywords": [
+    "ci",
+    "github-actions",
+    "coding-agents",
+    "logs"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "exports": {
     ".": {
