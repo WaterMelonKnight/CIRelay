@@ -61,6 +61,18 @@ try {
     );
     if (unwanted) fail(`${candidate.name} includes unwanted path ${unwanted}`);
 
+    const packedLicense = execFileSync(
+      'tar',
+      ['-xOzf', archive, 'package/LICENSE'],
+      { encoding: 'utf8' },
+    );
+    if (
+      !packedLicense.includes('Apache License') ||
+      !packedLicense.includes('Version 2.0')
+    ) {
+      fail(`${candidate.name} does not contain the Apache License 2.0 text`);
+    }
+
     const packedManifest = JSON.parse(
       execFileSync('tar', ['-xOzf', archive, 'package/package.json'], {
         encoding: 'utf8',
