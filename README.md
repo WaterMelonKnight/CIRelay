@@ -72,7 +72,9 @@ are wired for a first-page implementation. No credentials or network access are
 needed for the normal test suite. See the [architecture](docs/architecture.md)
 and [run-query semantics](docs/run-queries.md). Queries may use a precise run ID
 or agent-friendly PR, commit, and branch selectors, including the latest failed
-matching run.
+matching run. Agents can explore matches with `list_ci_runs` or retrieve a
+single structured result directly with `get_failure_context`; precise `runId`
+calls remain supported.
 
 ## License
 
