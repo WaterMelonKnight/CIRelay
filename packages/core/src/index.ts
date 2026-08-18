@@ -5,3 +5,4 @@ export * from './log-source.js';
 export * from './log-search.js';
 export * from './run-resolution.js';
 export * from './types.js';
+export * from './config.js';

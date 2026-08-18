@@ -11,12 +11,19 @@ import {
   CachedLogSource,
   MemoryJobLogCache,
   searchJobLog,
+  type RepositoryConfigSource,
 } from '@cirelay/core';
 
 export class CiToolHandlers {
   private readonly logSource;
 
-  constructor(private readonly provider: CiProvider) {
+  constructor(
+    private readonly provider: CiProvider,
+    private readonly configSource:
+      RepositoryConfigSource | undefined = 'getConfig' in provider
+      ? (provider as CiProvider & RepositoryConfigSource)
+      : undefined,
+  ) {
     this.logSource = new CachedLogSource(provider, new MemoryJobLogCache());
   }
   async getCiStatus(repository: RepositoryRef, commitSha?: string) {
@@ -40,7 +47,7 @@ export class CiToolHandlers {
   async getFailureContext(
     query: CiRunQuery,
     sourcePolicy: LogSourcePolicy = 'prefer-cache',
-    extractionProfile: ExtractionProfileName = 'generic',
+    extractionProfile?: ExtractionProfileName,
   ) {
     if (
       query.runId &&
@@ -54,14 +61,20 @@ export class CiToolHandlers {
         {
           logSourcePolicy: sourcePolicy,
           logSource: this.logSource,
-          extractionProfile,
+          ...(extractionProfile ? { extractionProfile } : {}),
+          ...(this.configSource
+            ? { repositoryConfigSource: this.configSource }
+            : {}),
         },
       );
     }
     return buildFailureContextForQuery(this.provider, query, {
       logSourcePolicy: sourcePolicy,
       logSource: this.logSource,
-      extractionProfile,
+      ...(extractionProfile ? { extractionProfile } : {}),
+      ...(this.configSource
+        ? { repositoryConfigSource: this.configSource }
+        : {}),
     });
   }
 

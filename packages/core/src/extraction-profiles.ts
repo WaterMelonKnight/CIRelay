@@ -8,7 +8,8 @@ export type EvidenceCategory =
   | 'test-failure'
   | 'build-failure'
   | 'application-context'
-  | 'package-manager';
+  | 'package-manager'
+  | 'repository-rule';
 
 export interface ParsedEvidenceLine {
   lineNumber: number;

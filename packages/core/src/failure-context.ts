@@ -14,12 +14,19 @@ import {
   type LogSource,
   type LogSourcePolicy,
 } from './log-source.js';
+import {
+  resolveExtractionOptions,
+  type ExtractionOptions,
+  type RepositoryConfigSource,
+} from './config.js';
 
 export interface BuildFailureContextOptions {
   logSourcePolicy?: LogSourcePolicy;
   logSource?: LogSource;
   now?: () => Date;
   extractionProfile?: ExtractionProfileName;
+  extractionOptions?: Partial<ExtractionOptions>;
+  repositoryConfigSource?: RepositoryConfigSource;
 }
 
 const defaultLogSources = new WeakMap<CiProvider, LogSource>();
@@ -52,6 +59,21 @@ export async function buildFailureContext(
     provider.getRun(input),
     provider.listJobs(input),
   ]);
+  const repositoryConfig = options.repositoryConfigSource
+    ? await options.repositoryConfigSource.getConfig(
+        run.repository,
+        run.commit.sha,
+      )
+    : undefined;
+  const extractionOptions = resolveExtractionOptions({
+    ...(repositoryConfig ? { repositoryConfig } : {}),
+    invocationOptions: {
+      ...options.extractionOptions,
+      ...(options.extractionProfile
+        ? { profile: options.extractionProfile }
+        : {}),
+    },
+  });
   const failed = jobs.filter(
     (job) => job.conclusion === 'failure' || job.conclusion === 'timed_out',
   );
@@ -61,7 +83,7 @@ export async function buildFailureContext(
         { repository: input.repository, jobId: job.id },
         options.logSourcePolicy ? { policy: options.logSourcePolicy } : {},
       );
-      const parsed = extractLogEvidence(log, 80, options.extractionProfile);
+      const parsed = extractLogEvidence(log, extractionOptions);
       return {
         job,
         failedSteps: job.steps.filter((step) => step.conclusion === 'failure'),
