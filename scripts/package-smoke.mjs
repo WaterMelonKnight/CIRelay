@@ -6,7 +6,7 @@ import process from 'node:process';
 
 const root = resolve(import.meta.dirname, '..');
 const outputDirectory = mkdtempSync(join(tmpdir(), 'cirelay-pack-'));
-const releaseVersion = '0.1.0-alpha.1';
+const releaseVersion = '0.1.0-alpha.2';
 const packages = [
   {
     directory: 'packages/core',
@@ -34,19 +34,21 @@ function fail(message) {
 
 try {
   for (const candidate of packages) {
+    // npm publish uses npm's pack implementation. Inspect that exact artifact
+    // rather than relying on pnpm's workspace-protocol rewriting behavior.
     const output = execFileSync(
-      'pnpm',
-      ['pack', '--pack-destination', outputDirectory],
+      'npm',
+      ['pack', '--json', '--pack-destination', outputDirectory],
       {
         cwd: join(root, candidate.directory),
         encoding: 'utf8',
       },
-    ).trim();
-    const tarball = output.split(/\r?\n/).at(-1);
+    );
+    const [{ filename: tarball } = {}] = JSON.parse(output);
     if (!tarball?.endsWith('.tgz'))
-      fail(`pnpm pack did not report a tarball for ${candidate.name}`);
+      fail(`npm pack did not report a tarball for ${candidate.name}`);
 
-    const archive = resolve(join(root, candidate.directory), tarball);
+    const archive = join(outputDirectory, tarball);
     const entries = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' })
       .trim()
       .split(/\r?\n/);
@@ -94,11 +96,17 @@ try {
         );
       }
     }
-    for (const [dependency, version] of Object.entries(
-      packedManifest.dependencies ?? {},
-    )) {
-      if (String(version).startsWith('workspace:'))
-        fail(`${candidate.name} leaves ${dependency} as ${version}`);
+    for (const dependencyField of [
+      'dependencies',
+      'optionalDependencies',
+      'peerDependencies',
+    ]) {
+      for (const [dependency, version] of Object.entries(
+        packedManifest[dependencyField] ?? {},
+      )) {
+        if (String(version).startsWith('workspace:'))
+          fail(`${candidate.name} leaves ${dependency} as ${version}`);
+      }
     }
     if (candidate.bin) {
       const targets = Object.values(packedManifest.bin ?? {}).map((target) =>

@@ -1,3 +1,7 @@
 packages:
   - packages/*
   - apps/*
+
+# Keep publishable manifests npm-compatible while resolving matching local
+# package versions to workspace projects during development.
+linkWorkspacePackages: true
