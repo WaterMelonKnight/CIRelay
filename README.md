@@ -4,6 +4,8 @@
 
 CIRelay turns CI failures into structured context and events that AI coding agents can understand and act on. It collects provider data, normalizes runs and jobs, reduces noisy logs, and exposes deterministic evidence. CIRelay is not another autonomous agent and does not put an LLM in its core path.
 
+Repositories can define bounded, deterministic evidence policy in [`.cirelay.yml`](docs/configuration.md).
+
 ## Interaction modes
 
 **Pull mode (Milestone 0):** `Agent -> MCP -> CIRelay -> CI provider`

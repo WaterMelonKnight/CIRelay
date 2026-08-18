@@ -10,7 +10,10 @@ import type {
   PullRequestInput,
   PullRequestRef,
   RunInput,
+  RepositoryConfigSource,
+  RepositoryRef,
 } from '@cirelay/core';
+import { parseCiRelayConfig, type CiRelayConfig } from '@cirelay/core';
 import { Octokit } from 'octokit';
 
 export interface GitHubRequester {
@@ -54,9 +57,45 @@ const conclusion = (value: unknown): CiConclusion | undefined => {
   return valid.find((item) => item === value);
 };
 
-export class GitHubActionsProvider implements CiProvider {
+export class GitHubActionsProvider
+  implements CiProvider, RepositoryConfigSource
+{
   readonly name = 'github-actions';
   constructor(private readonly client: GitHubRequester) {}
+
+  async getConfig(
+    repository: RepositoryRef,
+    ref?: string,
+  ): Promise<CiRelayConfig | undefined> {
+    for (const path of ['.cirelay.yml', '.cirelay.yaml']) {
+      try {
+        const { data } = await this.client.request(
+          'GET /repos/{owner}/{repo}/contents/{path}',
+          {
+            owner: repository.owner,
+            repo: repository.name,
+            path,
+            ...(ref ? { ref } : {}),
+          },
+        );
+        const file = object(data);
+        if (file.encoding !== 'base64' || typeof file.content !== 'string')
+          throw new Error(
+            'GitHub returned an unsupported repository config response',
+          );
+        return parseCiRelayConfig(
+          Buffer.from(file.content.replace(/\s/g, ''), 'base64').toString(
+            'utf8',
+          ),
+        );
+      } catch (error) {
+        const status = object(error).status;
+        if (status === 404) continue;
+        throw error;
+      }
+    }
+    return undefined;
+  }
 
   async listRuns(input: ListRunsInput): Promise<CiRun[]> {
     const { data } = await this.client.request(

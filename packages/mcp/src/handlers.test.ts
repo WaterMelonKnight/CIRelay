@@ -137,6 +137,45 @@ describe('MCP handlers', () => {
     expect(getJobLog).toHaveBeenCalledTimes(2);
   });
 
+  it('loads repository policy at the run SHA and lets an explicit profile win', async () => {
+    const run = failedRun('7', 'exact-run-sha', '2026-01-01T00:00:00Z');
+    const getConfig = vi.fn(() =>
+      Promise.resolve({
+        version: 1 as const,
+        extractionProfile: 'java-spring' as const,
+        logExtraction: { include: ['PAY-'] },
+      }),
+    );
+    const configuredProvider = {
+      ...contextProvider([run]),
+      getConfig,
+      getJobLog: () => Promise.resolve('PAY-123\nERR_PNPM_FETCH_500'),
+    };
+    const handlers = new CiToolHandlers(configuredProvider);
+    const configured = await handlers.getFailureContext({
+      repository,
+      runId: '7',
+    });
+    expect(getConfig).toHaveBeenCalledWith(repository, 'exact-run-sha');
+    expect(configured.evidence).toContainEqual(
+      expect.objectContaining({
+        message: 'PAY-123',
+        parser: 'repository-config',
+      }),
+    );
+    const explicit = await handlers.getFailureContext(
+      { repository, runId: '7' },
+      'refresh',
+      'node-pnpm',
+    );
+    expect(explicit.evidence).toContainEqual(
+      expect.objectContaining({
+        message: 'ERR_PNPM_FETCH_500',
+        category: 'package-manager',
+      }),
+    );
+  });
+
   it('shares raw-log cache between failure context and runtime searches', async () => {
     const run = failedRun('7', 'head', '2026-01-01T00:00:00Z');
     const getJobLog = vi.fn(() => Promise.resolve('Error: postgres failed'));

@@ -141,7 +141,7 @@ export function createMcpServer(provider: CiProvider): McpServer {
         ),
       extractionProfile: z
         .enum(['generic', 'java-maven', 'java-spring', 'node-pnpm'])
-        .default('generic')
+        .optional()
         .describe('Deterministic framework-aware evidence extraction profile'),
     },
     async ({
