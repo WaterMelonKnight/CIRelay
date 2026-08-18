@@ -109,4 +109,19 @@ describe('run resolution', () => {
       resolveRuns(provider(), { repository, commitSha: 'a', branch: 'main' }),
     ).rejects.toBeInstanceOf(RunResolutionError);
   });
+
+  it.each([0, -1, 1.5])(
+    'rejects invalid pull request number %s',
+    async (pullRequestNumber) => {
+      await expect(
+        resolveRuns(provider(), { repository, pullRequestNumber }),
+      ).rejects.toMatchObject({ code: 'invalid-query' });
+    },
+  );
+
+  it('rejects unknown as a conclusion query filter', async () => {
+    await expect(
+      resolveRuns(provider(), { repository, conclusion: 'unknown' }),
+    ).rejects.toMatchObject({ code: 'invalid-query' });
+  });
 });

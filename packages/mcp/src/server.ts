@@ -33,7 +33,6 @@ export function createMcpServer(provider: CiProvider): McpServer {
           'neutral',
           'timed_out',
           'action_required',
-          'unknown',
         ])
         .optional(),
       latest: z.boolean().optional(),

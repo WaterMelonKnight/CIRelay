@@ -35,10 +35,19 @@ function validateQuery(query: CiRunQuery): void {
       'Only one of commitSha, pullRequestNumber, or branch may be supplied',
     );
   }
-  if (query.pullRequestNumber !== undefined && query.pullRequestNumber < 1) {
+  if (
+    query.pullRequestNumber !== undefined &&
+    (!Number.isInteger(query.pullRequestNumber) || query.pullRequestNumber < 1)
+  ) {
     throw new RunResolutionError(
       'invalid-query',
       'pullRequestNumber must be a positive integer',
+    );
+  }
+  if (query.conclusion === 'unknown') {
+    throw new RunResolutionError(
+      'invalid-query',
+      'unknown is not a supported conclusion query filter',
     );
   }
   if (
