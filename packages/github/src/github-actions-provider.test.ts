@@ -63,4 +63,53 @@ describe('GitHubActionsProvider', () => {
       provider.getJobLog({ repository: { owner: 'a', name: 'b' }, jobId: '1' }),
     ).resolves.toContain('fixture');
   });
+
+  it.each([
+    ['ArrayBuffer', new TextEncoder().encode('Error: array buffer').buffer],
+    ['Buffer', Buffer.from('Error: node buffer')],
+    [
+      'offset typed array',
+      new Uint8Array(
+        new TextEncoder().encode('xxError: typed arrayxx').buffer,
+        2,
+        18,
+      ),
+    ],
+  ])('decodes %s log responses', async (_name, data) => {
+    const provider = new GitHubActionsProvider({
+      request: () => Promise.resolve({ data }),
+    });
+    await expect(
+      provider.getJobLog({ repository: { owner: 'a', name: 'b' }, jobId: '1' }),
+    ).resolves.toMatch(/^Error:/);
+  });
+
+  it('maps pull request metadata from a workflow run payload', async () => {
+    const provider = new GitHubActionsProvider({
+      request: () =>
+        Promise.resolve({
+          data: {
+            id: 12,
+            name: 'CI',
+            head_sha: 'run-head',
+            status: 'completed',
+            conclusion: 'failure',
+            created_at: '2025-01-01',
+            updated_at: '2025-01-02',
+            pull_requests: [
+              {
+                number: 42,
+                head: { sha: 'pr-head' },
+                base: { sha: 'pr-base' },
+              },
+            ],
+          },
+        }),
+    });
+    await expect(
+      provider.getRun({ repository: { owner: 'a', name: 'b' }, runId: '12' }),
+    ).resolves.toMatchObject({
+      pullRequest: { number: 42, headSha: 'pr-head', baseSha: 'pr-base' },
+    });
+  });
 });
