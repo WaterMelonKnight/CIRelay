@@ -26,29 +26,42 @@ This repository contains a strict TypeScript pnpm workspace with:
 
 It does **not** contain an autonomous repair agent, LLM calls, a GitHub App, production webhook delivery, a DeepSeek Harness plugin, GitLab/Jenkins support, a database/event store, or a SaaS dashboard.
 
-## Development
+## Quick Start
 
 Requirements: Node.js 22+ and pnpm 10+.
 
 ```sh
+git clone https://github.com/WaterMelonKnight/CIRelay.git
+cd CIRelay
 pnpm install
-pnpm lint
-pnpm typecheck
-pnpm test
 pnpm build
 ```
 
-To start MCP after building, provide a GitHub token with read access to the target repository:
+Next, create a least-privilege GitHub fine-grained personal access token by following the
+[GitHub Actions provider setup guide](docs/providers/github.md), expose it as
+`GITHUB_TOKEN`, and verify the integration:
 
 ```sh
-GITHUB_TOKEN=... pnpm --filter @cirelay/mcp exec cirelay-mcp
+export GITHUB_TOKEN='<your-token>'
+pnpm smoke:github
 ```
 
-No credentials or network access are needed for tests. See [architecture](docs/architecture.md) and the [roadmap](docs/roadmap.md).
+Then start the local stdio MCP server (configure your MCP client to run the same command and
+pass `GITHUB_TOKEN` in its environment):
+
+```sh
+pnpm --filter @cirelay/mcp exec cirelay-mcp
+```
+
+The value above is a placeholder, never a token to copy. See the
+[provider guides](docs/providers/README.md) for the repeatable onboarding structure that future
+CI integrations will follow. No credentials or network access are needed for the normal test
+suite. See [architecture](docs/architecture.md) and the [roadmap](docs/roadmap.md).
 
 ## Status
 
-Milestone 0 is an executable foundation. GitHub run/job/log and PR-file endpoints are wired for a first-page implementation; robust pagination, API error translation, authentication guidance, and integration verification are deliberately scheduled for M1.
+Milestone 0 is an executable foundation. GitHub run/job/log and PR-file endpoints are wired for
+a first-page implementation; robust pagination and API error translation are later work.
 
 ## License
 
