@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "typecheck": "pnpm -r --sort typecheck",
     "test": "vitest run",
+    "pack:check": "node scripts/package-smoke.mjs",
     "smoke:github": "node scripts/github-actions-smoke.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
