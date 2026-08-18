@@ -1,13 +1,28 @@
 # Releasing CIRelay packages
 
-The intended first public npm release is an alpha/pre-release (for example, `0.1.0-alpha.1`). This document is a plan; repository CI does not publish and contributors do not need npm credentials.
+The first public npm release is being prepared as version `0.1.0-alpha.1`. This document is a plan; repository CI does not publish and contributors do not need npm credentials.
 
-## Planned release checklist
+## First alpha release checklist
 
 1. Validate the latest `main` with `pnpm install --frozen-lockfile`, `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm format:check`.
-2. Run `pnpm pack:check`. Inspect the isolated tarballs and packed manifests; do not commit `.tgz` files.
-3. Version `@cirelay/core`, `@cirelay/github`, and `@cirelay/mcp` consistently with an alpha version, updating the lockfile and internal dependency ranges.
-4. From a clean, validated checkout and an authenticated maintainer environment, publish the public packages in dependency order: core, GitHub adapter, then MCP. Never put an npm token in source or PR CI.
-5. Verify installation and `npx @cirelay/mcp`, then create the corresponding Git tag and release notes according to maintainer policy.
+2. Run `pnpm pack:check`. It verifies the isolated tarballs, including the shared prerelease version and exact internal dependency versions. Do not commit `.tgz` files.
+3. From a clean, validated checkout and an authenticated maintainer environment, publish with the `alpha` dist-tag in dependency order:
 
-Do not treat a successful pack check as publication. Publishing and creating a GitHub Release are deliberate maintainer actions outside normal CI.
+   ```sh
+   cd packages/core && npm publish --access public --tag alpha
+   cd ../github && npm publish --access public --tag alpha
+   cd ../mcp && npm publish --access public --tag alpha
+   ```
+
+   The order is required because `@cirelay/github` depends on `@cirelay/core`, while `@cirelay/mcp` depends on both packages. Always include `--tag alpha`: publishing this prerelease without it could incorrectly assign npm's default `latest` tag.
+
+4. After all three packages are published, verify the intended user commands:
+
+   ```sh
+   npx @cirelay/mcp@alpha
+   npx @cirelay/mcp@0.1.0-alpha.1
+   ```
+
+5. Only after publication is verified, create the corresponding Git tag and release notes according to maintainer policy.
+
+Do not treat a successful pack check as publication. npm publication, Git tags, and GitHub Releases are deliberate maintainer actions outside normal CI.

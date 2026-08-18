@@ -6,6 +6,7 @@ import process from 'node:process';
 
 const root = resolve(import.meta.dirname, '..');
 const outputDirectory = mkdtempSync(join(tmpdir(), 'cirelay-pack-'));
+const releaseVersion = '0.1.0-alpha.1';
 const packages = [
   {
     directory: 'packages/core',
@@ -16,12 +17,14 @@ const packages = [
     directory: 'packages/github',
     name: '@cirelay/github',
     outputs: ['dist/index.js', 'dist/index.d.ts'],
+    internalDependencies: ['@cirelay/core'],
   },
   {
     directory: 'packages/mcp',
     name: '@cirelay/mcp',
     outputs: ['dist/index.js', 'dist/index.d.ts', 'dist/main.js'],
     bin: 'dist/main.js',
+    internalDependencies: ['@cirelay/core', '@cirelay/github'],
   },
 ];
 
@@ -80,6 +83,17 @@ try {
     );
     if (packedManifest.name !== candidate.name)
       fail(`unexpected manifest name ${packedManifest.name}`);
+    if (packedManifest.version !== releaseVersion)
+      fail(
+        `${candidate.name} has version ${packedManifest.version}; expected ${releaseVersion}`,
+      );
+    for (const dependency of candidate.internalDependencies ?? []) {
+      if (packedManifest.dependencies?.[dependency] !== releaseVersion) {
+        fail(
+          `${candidate.name} depends on ${dependency} at ${packedManifest.dependencies?.[dependency]}; expected ${releaseVersion}`,
+        );
+      }
+    }
     for (const [dependency, version] of Object.entries(
       packedManifest.dependencies ?? {},
     )) {

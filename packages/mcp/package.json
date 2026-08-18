@@ -1,6 +1,6 @@
 {
   "name": "@cirelay/mcp",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "description": "Local stdio MCP server exposing GitHub Actions failure context to coding agents",
   "license": "Apache-2.0",
   "repository": {
@@ -42,8 +42,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@cirelay/core": "workspace:*",
-    "@cirelay/github": "workspace:*",
+    "@cirelay/core": "workspace:0.1.0-alpha.1",
+    "@cirelay/github": "workspace:0.1.0-alpha.1",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.24.0"
   }
