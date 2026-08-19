@@ -20,13 +20,15 @@ Node.js 22 or newer and a GitHub credential are required.
 
 ### Claude Code
 
-Export a GitHub token in your shell, then register CIRelay:
+Register CIRelay without storing a token in its MCP configuration. Export the
+token in the same shell that launches Claude Code so the spawned CIRelay process
+inherits it:
 
 ```sh
 export GITHUB_TOKEN='<your-token>'
 claude mcp add cirelay \
-  --env GITHUB_TOKEN=$GITHUB_TOKEN \
   -- npx -y @cirelay/mcp@alpha
+claude
 ```
 
 Verify the configuration with either command:
@@ -40,7 +42,12 @@ Then ask Claude Code:
 
 > Use CIRelay to inspect the latest failed CI run for PR #42. Resolve the failed run, retrieve FailureContext, and search logs only if more evidence is needed.
 
-Use a least-privilege GitHub token scoped to repositories CIRelay may inspect. Avoid committing tokens to shell scripts or repository files. See the [GitHub provider guide](docs/providers/github.md) for recommended read permissions.
+Do not pass an expanded secret through `claude mcp add --env` when that would
+persist the value in Claude Code's MCP configuration. Use a least-privilege
+GitHub token scoped to repositories CIRelay may inspect, and avoid committing
+tokens to shell scripts or repository files. See the
+[GitHub provider guide](docs/providers/github.md) for recommended read
+permissions.
 
 ## Why CIRelay?
 

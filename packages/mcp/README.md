@@ -15,8 +15,14 @@ For Claude Code:
 ```sh
 export GITHUB_TOKEN='<your-token>'
 claude mcp add cirelay \
-  --env GITHUB_TOKEN=$GITHUB_TOKEN \
   -- npx -y @cirelay/mcp@alpha
+claude
 ```
 
-Use a least-privilege token and never commit credentials to scripts or repository files. See the [CIRelay repository](https://github.com/WaterMelonKnight/CIRelay#readme) for tools, workflow, permissions, limitations, and license information.
+Export `GITHUB_TOKEN` in the same shell that launches Claude Code so CIRelay
+inherits it. Do not pass an expanded secret through `claude mcp add --env` when
+that would persist the value in Claude Code's MCP configuration. Use a
+least-privilege token and never commit credentials to scripts or repository
+files. See the
+[CIRelay repository](https://github.com/WaterMelonKnight/CIRelay#readme) for
+tools, workflow, permissions, limitations, and license information.
