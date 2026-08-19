@@ -3,6 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { CiToolHandlers } from './handlers.js';
+import { TOOL_DESCRIPTIONS } from './tool-descriptions.js';
 
 const repositoryShape = {
   owner: z.string().min(1),
@@ -32,11 +33,11 @@ const output = (value: unknown) => ({
 });
 
 export function createMcpServer(provider: CiProvider): McpServer {
-  const server = new McpServer({ name: 'cirelay', version: '0.1.0' });
+  const server = new McpServer({ name: 'cirelay', version: '0.1.0-alpha.3' });
   const handlers = new CiToolHandlers(provider);
   server.tool(
     'list_ci_runs',
-    'Explore or resolve CI runs by run ID, PR, commit, or branch.',
+    TOOL_DESCRIPTIONS.listCiRuns,
     {
       ...repositoryShape,
       ...runSelectorShape,
@@ -67,7 +68,7 @@ export function createMcpServer(provider: CiProvider): McpServer {
   );
   server.tool(
     'get_ci_status',
-    'List recent CI runs, optionally for a commit',
+    TOOL_DESCRIPTIONS.getCiStatus,
     { ...repositoryShape, commitSha: z.string().optional() },
     async ({ owner, repository, commitSha }) =>
       output(
@@ -76,21 +77,21 @@ export function createMcpServer(provider: CiProvider): McpServer {
   );
   server.tool(
     'list_failed_jobs',
-    'List failed jobs for a CI run',
+    TOOL_DESCRIPTIONS.listFailedJobs,
     { ...repositoryShape, runId: z.string() },
     async ({ owner, repository, runId }) =>
       output(await handlers.listFailedJobs({ owner, name: repository }, runId)),
   );
   server.tool(
     'get_job_log',
-    'Get the raw log for a CI job',
+    TOOL_DESCRIPTIONS.getJobLog,
     { ...repositoryShape, jobId: z.string() },
     async ({ owner, repository, jobId }) =>
       output(await handlers.getJobLog({ owner, name: repository }, jobId)),
   );
   server.tool(
     'search_job_logs',
-    "Search a CI job's raw log with agent-supplied runtime patterns, reusing cached logs when possible.",
+    TOOL_DESCRIPTIONS.searchJobLogs,
     {
       ...repositoryShape,
       jobId: z.string().min(1),
@@ -129,7 +130,7 @@ export function createMcpServer(provider: CiProvider): McpServer {
   );
   server.tool(
     'get_failure_context',
-    'Resolve a single CI run and build structured failure evidence. sourcePolicy controls selected job-log retrieval only, not run resolution.',
+    TOOL_DESCRIPTIONS.getFailureContext,
     {
       ...repositoryShape,
       ...runSelectorShape,
