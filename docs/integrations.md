@@ -4,6 +4,13 @@ CIRelay exposes a standard local stdio MCP server. A coding agent that supports
 local MCP servers can spawn CIRelay and use its tools; CIRelay is infrastructure
 for coding agents rather than a plugin for one particular agent.
 
+## Capabilities and investigation policy
+
+MCP exposes CIRelay's CI capabilities to an agent. The canonical
+[CI investigation skill](../skills/cirelay-ci-investigation/SKILL.md) provides
+agent-neutral tool-selection, fallback, and evidence-provenance policy for using
+those capabilities. Client installation and configuration remain in this guide.
+
 ## Integration status
 
 | Agent                      | Transport       | Status                                  |
