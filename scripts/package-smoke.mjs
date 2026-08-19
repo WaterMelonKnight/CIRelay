@@ -6,7 +6,7 @@ import process from 'node:process';
 
 const root = resolve(import.meta.dirname, '..');
 const outputDirectory = mkdtempSync(join(tmpdir(), 'cirelay-pack-'));
-const releaseVersion = '0.1.0-alpha.2';
+const releaseVersion = '0.1.0-alpha.3';
 const packages = [
   {
     directory: 'packages/core',
@@ -124,6 +124,21 @@ try {
       );
       if (!main.startsWith('#!/usr/bin/env node'))
         fail(`${candidate.name} bin has no Node shebang`);
+    }
+    if (candidate.name === '@cirelay/mcp') {
+      const descriptionsRuntime = execFileSync(
+        'tar',
+        ['-xOzf', archive, 'package/dist/tool-descriptions.js'],
+        { encoding: 'utf8' },
+      );
+      for (const policyPhrase of [
+        'Primary diagnostic tool',
+        'Targeted follow-up',
+        'final fallback',
+      ]) {
+        if (!descriptionsRuntime.includes(policyPhrase))
+          fail(`@cirelay/mcp runtime is missing ${policyPhrase}`);
+      }
     }
     process.stdout.write(
       `checked ${candidate.name}: ${entries.length} files, ${readFileSync(archive).byteLength} bytes\n`,
