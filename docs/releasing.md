@@ -1,6 +1,6 @@
 # Releasing CIRelay packages
 
-The corrected public npm release is being prepared as version `0.1.0-alpha.2`. This document is a plan; repository CI does not publish and contributors do not need npm credentials.
+The next public npm release is being prepared as version `0.1.0-alpha.3`. This document is a plan; repository CI does not publish and contributors do not need npm credentials.
 
 ## Alpha.1 packaging postmortem
 
@@ -24,7 +24,7 @@ The corrected public npm release is being prepared as version `0.1.0-alpha.2`. T
 
    ```sh
    npx @cirelay/mcp@alpha
-   npx @cirelay/mcp@0.1.0-alpha.2
+   npx @cirelay/mcp@0.1.0-alpha.3
    ```
 
 5. Only after publication is verified, create the corresponding Git tag and release notes according to maintainer policy.

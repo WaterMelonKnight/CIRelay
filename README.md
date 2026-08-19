@@ -109,6 +109,8 @@ The intended workflow is:
 2. Call `get_failure_context` to retrieve failed jobs, steps, and extracted evidence.
 3. Call `search_job_logs` only if the structured context is insufficient. Fetch an entire log only as a last resort.
 
+This core investigation policy is also reflected directly in the MCP tool descriptions, so compatible agents can follow it without installing the canonical skill.
+
 See [CI run query semantics](docs/run-queries.md) and [configuration](docs/configuration.md) for detailed request behavior.
 
 ## Packages

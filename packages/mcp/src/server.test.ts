@@ -37,13 +37,32 @@ async function connectedClient() {
 }
 
 describe('MCP server', () => {
+  it('advertises the evidence-first tool-selection workflow', async () => {
+    const { client, server } = await connectedClient();
+    const tools = (await client.listTools()).tools;
+    const description = (name: string) =>
+      tools.find((tool) => tool.name === name)?.description ?? '';
+
+    expect(description('get_failure_context')).toMatch(/Primary tool/i);
+    expect(description('get_failure_context')).toContain('structured evidence');
+    expect(description('get_failure_context')).toContain('stop if sufficient');
+    expect(description('search_job_logs')).toMatch(/Targeted follow-up/i);
+    expect(description('search_job_logs')).toContain('narrow literal patterns');
+    expect(description('search_job_logs')).toContain('do not use first');
+    expect(description('get_job_log')).toMatch(/complete raw CI job log/i);
+    expect(description('get_job_log')).toMatch(/final fallback/i);
+    expect(description('get_job_log')).toContain('do not fetch full logs');
+
+    await Promise.all([client.close(), server.close()]);
+  });
+
   it('advertises bounded runtime log-search inputs', async () => {
     const { client, server } = await connectedClient();
     const tool = (await client.listTools()).tools.find(
       ({ name }) => name === 'search_job_logs',
     );
 
-    expect(tool?.description).toContain('runtime patterns');
+    expect(tool?.description).toContain('narrow literal patterns');
     expect(tool?.inputSchema.required).toEqual([
       'owner',
       'repository',

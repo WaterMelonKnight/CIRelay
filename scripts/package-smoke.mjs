@@ -6,7 +6,7 @@ import process from 'node:process';
 
 const root = resolve(import.meta.dirname, '..');
 const outputDirectory = mkdtempSync(join(tmpdir(), 'cirelay-pack-'));
-const releaseVersion = '0.1.0-alpha.2';
+const releaseVersion = '0.1.0-alpha.3';
 const packages = [
   {
     directory: 'packages/core',
@@ -25,6 +25,10 @@ const packages = [
     outputs: ['dist/index.js', 'dist/index.d.ts', 'dist/main.js'],
     bin: 'dist/main.js',
     internalDependencies: ['@cirelay/core', '@cirelay/github'],
+    runtimeContent: {
+      file: 'dist/server.js',
+      includes: ['Primary tool for CI failure investigation', 'final fallback'],
+    },
   },
 ];
 
@@ -60,6 +64,17 @@ try {
     ]) {
       if (!entries.includes(expected))
         fail(`${candidate.name} is missing ${expected}`);
+    }
+    if (candidate.runtimeContent) {
+      const runtime = execFileSync(
+        'tar',
+        ['-xOzf', archive, `package/${candidate.runtimeContent.file}`],
+        { encoding: 'utf8' },
+      );
+      for (const expected of candidate.runtimeContent.includes) {
+        if (!runtime.includes(expected))
+          fail(`${candidate.name} runtime is missing ${expected}`);
+      }
     }
     const unwanted = entries.find((entry) =>
       /(^|\/)(src|coverage|node_modules|fixtures)(\/|$)/.test(entry),

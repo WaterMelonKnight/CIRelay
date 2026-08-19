@@ -31,12 +31,30 @@ const output = (value: unknown) => ({
   content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }],
 });
 
+export const TOOL_DESCRIPTIONS = {
+  listCiRuns:
+    'Preferred tool to resolve or explore a CI run when it is not already known; filter by run ID, PR, commit, branch, conclusion, or recency before investigating failures.',
+  getCiStatus:
+    'Answer quick CI state, pass/fail, or recent-status questions, optionally for a commit. For detailed failure investigation, continue with get_failure_context.',
+  listFailedJobs:
+    'List job-level failures when the CI run is already known and only failed-job information is needed. Prefer get_failure_context for a full investigation.',
+  getJobLog:
+    'Retrieve the complete raw CI job log as a final fallback only when structured FailureContext and targeted search_job_logs results are insufficient; do not fetch full logs by default.',
+  searchJobLogs:
+    'Targeted follow-up when get_failure_context evidence is insufficient or ambiguous. Search for narrow literal patterns derived from evidence or a concrete hypothesis; do not use first, and prefer this before get_job_log.',
+  getFailureContext:
+    'Primary tool for CI failure investigation: retrieve bounded, structured evidence including failed jobs, steps, and extracted relevant lines. Use before raw logs; stop if sufficient, otherwise follow up with targeted search_job_logs.',
+} as const;
+
 export function createMcpServer(provider: CiProvider): McpServer {
-  const server = new McpServer({ name: 'cirelay', version: '0.1.0' });
+  const server = new McpServer({
+    name: 'cirelay',
+    version: '0.1.0-alpha.3',
+  });
   const handlers = new CiToolHandlers(provider);
   server.tool(
     'list_ci_runs',
-    'Explore or resolve CI runs by run ID, PR, commit, or branch.',
+    TOOL_DESCRIPTIONS.listCiRuns,
     {
       ...repositoryShape,
       ...runSelectorShape,
@@ -67,7 +85,7 @@ export function createMcpServer(provider: CiProvider): McpServer {
   );
   server.tool(
     'get_ci_status',
-    'List recent CI runs, optionally for a commit',
+    TOOL_DESCRIPTIONS.getCiStatus,
     { ...repositoryShape, commitSha: z.string().optional() },
     async ({ owner, repository, commitSha }) =>
       output(
@@ -76,21 +94,21 @@ export function createMcpServer(provider: CiProvider): McpServer {
   );
   server.tool(
     'list_failed_jobs',
-    'List failed jobs for a CI run',
+    TOOL_DESCRIPTIONS.listFailedJobs,
     { ...repositoryShape, runId: z.string() },
     async ({ owner, repository, runId }) =>
       output(await handlers.listFailedJobs({ owner, name: repository }, runId)),
   );
   server.tool(
     'get_job_log',
-    'Get the raw log for a CI job',
+    TOOL_DESCRIPTIONS.getJobLog,
     { ...repositoryShape, jobId: z.string() },
     async ({ owner, repository, jobId }) =>
       output(await handlers.getJobLog({ owner, name: repository }, jobId)),
   );
   server.tool(
     'search_job_logs',
-    "Search a CI job's raw log with agent-supplied runtime patterns, reusing cached logs when possible.",
+    TOOL_DESCRIPTIONS.searchJobLogs,
     {
       ...repositoryShape,
       jobId: z.string().min(1),
@@ -129,7 +147,7 @@ export function createMcpServer(provider: CiProvider): McpServer {
   );
   server.tool(
     'get_failure_context',
-    'Resolve a single CI run and build structured failure evidence. sourcePolicy controls selected job-log retrieval only, not run resolution.',
+    TOOL_DESCRIPTIONS.getFailureContext,
     {
       ...repositoryShape,
       ...runSelectorShape,
