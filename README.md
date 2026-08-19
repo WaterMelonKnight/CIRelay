@@ -65,7 +65,9 @@ have documentation but have not yet been dogfooded with CIRelay.
 
 See [Agent integrations](docs/integrations.md) for client configuration, the
 client-neutral process model, status qualifications, and shared security
-guidance. Future or unverified clients are not presented as tested.
+guidance. For the recommended agent workflow, see the canonical
+[CI investigation skill](skills/cirelay-ci-investigation/SKILL.md). Future or
+unverified clients are not presented as tested.
 
 ## Why CIRelay?
 
