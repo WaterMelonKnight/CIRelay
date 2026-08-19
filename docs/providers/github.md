@@ -12,13 +12,11 @@ decode job logs, and construct a provider-neutral `FailureContext` with log-deri
 evidence. When GitHub associates the run with a pull request, CIRelay can also
 retrieve that pull request's changed files.
 
-### Future roadmap, not implemented
-
-The future query layer may locate runs by pull request number, branch, workflow,
-latest failed CI, time range, or status/conclusion filters. Future log extraction
-may add framework-specific parsers, custom user log rules, `.cirelay.yml`, failure
-fingerprints, diff correlation, and suspected-file ranking. None of these features
-is available today.
+Run queries can resolve runs by explicit run ID, pull request number, commit SHA,
+or branch, with conclusion, recency, and result-limit controls. Deterministic
+framework-aware extraction profiles and `.cirelay.yml` rules can enrich the
+returned evidence. Failure fingerprints, historical comparison, and diff
+correlation remain future work.
 
 ## Authentication method
 
@@ -103,6 +101,21 @@ pnpm --filter @cirelay/mcp exec cirelay-mcp
 
 ## Real dogfood result
 
+CIRelay has also completed an end-to-end dogfood test as a Claude Code MCP
+server. Claude Code used `list_ci_runs` and `get_failure_context` to resolve a
+real failed run, locate its failed `setup-node` step, and receive this evidence:
+
+```text
+Dependencies lock file is not found.
+Supported file patterns: pnpm-lock.yaml
+```
+
+The context also showed that downstream install, lint, typecheck, test, and build
+steps were skipped. This was enough for Claude Code to identify a setup failure
+caused by the missing `pnpm-lock.yaml`; `search_job_logs` was unnecessary. The
+classification was Claude Code's inference from CIRelay's structured evidence,
+not a semantic classification performed by CIRelay.
+
 CIRelay successfully ran the live smoke test against historical failed GitHub
 Actions run `32023569355` in `WaterMelonKnight/CIRelay`. The actual summary was:
 
@@ -166,9 +179,10 @@ from being constructed.
 
 ## Known limitations
 
-- Run selection requires one repository and an explicit run ID; broader query
-  filters are not implemented.
+- Run selection is pull-based and scoped to one repository per request; CIRelay
+  does not yet receive run events through webhooks.
 - Run, job, and pull-request-file API reads use their current first-page behavior.
-- Evidence extraction is deterministic and generic rather than framework-specific.
+- Evidence extraction is deterministic; its profiles provide bounded evidence,
+  not semantic diagnosis.
 - Authentication uses a caller-provided token; CIRelay does not yet provide a
   GitHub App authentication flow.
