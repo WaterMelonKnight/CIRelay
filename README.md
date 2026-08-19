@@ -42,12 +42,30 @@ Then ask Claude Code:
 
 > Use CIRelay to inspect the latest failed CI run for PR #42. Resolve the failed run, retrieve FailureContext, and search logs only if more evidence is needed.
 
-Do not pass an expanded secret through `claude mcp add --env` when that would
-persist the value in Claude Code's MCP configuration. Use a least-privilege
-GitHub token scoped to repositories CIRelay may inspect, and avoid committing
-tokens to shell scripts or repository files. See the
-[GitHub provider guide](docs/providers/github.md) for recommended read
-permissions.
+Claude Code spawns CIRelay as a stdio subprocess. Do not pass an expanded
+secret through `claude mcp add --env` when that would persist the value in
+Claude Code's MCP configuration. See the shared [integration security
+guidance](docs/integrations.md#security) for credential permissions and
+handling.
+
+## Agent integrations
+
+CIRelay is coding-agent-neutral infrastructure: any coding agent that supports
+local stdio MCP servers can use its standard MCP interface. Claude Code is the
+primary, end-to-end dogfooded integration; the other compatible clients below
+have documentation but have not yet been dogfooded with CIRelay.
+
+| Agent                      | Transport       | Status                                  |
+| -------------------------- | --------------- | --------------------------------------- |
+| Claude Code                | stdio MCP       | Tested end-to-end                       |
+| OpenCode                   | local/stdio MCP | Compatible, docs added                  |
+| GitHub Copilot CLI         | local/stdio MCP | Compatible, docs added                  |
+| GitHub Copilot cloud agent | local MCP       | Compatible with environment constraints |
+| Codex CLI                  | MCP             | Documentation pending verification      |
+
+See [Agent integrations](docs/integrations.md) for client configuration, the
+client-neutral process model, status qualifications, and shared security
+guidance. Future or unverified clients are not presented as tested.
 
 ## Why CIRelay?
 
