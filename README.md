@@ -55,19 +55,23 @@ local stdio MCP servers can use its standard MCP interface. Claude Code is the
 primary, end-to-end dogfooded integration; the other compatible clients below
 have documentation but have not yet been dogfooded with CIRelay.
 
-| Agent                      | Transport       | Status                                  |
-| -------------------------- | --------------- | --------------------------------------- |
-| Claude Code                | stdio MCP       | Tested end-to-end                       |
-| OpenCode                   | local/stdio MCP | Compatible, docs added                  |
-| GitHub Copilot CLI         | local/stdio MCP | Compatible, docs added                  |
-| GitHub Copilot cloud agent | local MCP       | Compatible with environment constraints |
-| Codex CLI                  | MCP             | Documentation pending verification      |
+| Agent                      | Transport       | Status                                        |
+| -------------------------- | --------------- | --------------------------------------------- |
+| Claude Code                | stdio MCP       | Tested end-to-end                             |
+| OpenCode                   | local/stdio MCP | Compatible, docs added                        |
+| GitHub Copilot CLI         | local/stdio MCP | Compatible, docs added                        |
+| GitHub Copilot cloud agent | local MCP       | Compatible with environment constraints       |
+| DeepSeek Harness           | MCP             | Guide added; verification and dogfood pending |
+| Codex CLI                  | MCP             | Documentation pending verification            |
 
 See [Agent integrations](docs/integrations.md) for client configuration, the
 client-neutral process model, status qualifications, and shared security
 guidance. For the recommended agent workflow, see the canonical
 [CI investigation skill](skills/cirelay-ci-investigation/SKILL.md). Future or
 unverified clients are not presented as tested.
+
+For the planned standard-MCP setup and manual test record, see the [DeepSeek
+Harness integration guide](docs/integrations/deepseek-harness.md).
 
 ## Why CIRelay?
 
