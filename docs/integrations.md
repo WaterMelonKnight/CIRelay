@@ -13,13 +13,14 @@ those capabilities. Client installation and configuration remain in this guide.
 
 ## Integration status
 
-| Agent                      | Transport       | Status                                  |
-| -------------------------- | --------------- | --------------------------------------- |
-| Claude Code                | stdio MCP       | Tested end-to-end                       |
-| OpenCode                   | local/stdio MCP | Compatible, docs added; not dogfooded   |
-| GitHub Copilot CLI         | local/stdio MCP | Compatible, docs added; not dogfooded   |
-| GitHub Copilot cloud agent | local MCP       | Compatible with environment constraints |
-| Codex CLI                  | MCP             | Documentation pending verification      |
+| Agent                      | Transport       | Status                                                    |
+| -------------------------- | --------------- | --------------------------------------------------------- |
+| Claude Code                | stdio MCP       | Tested end-to-end                                         |
+| OpenCode                   | local/stdio MCP | Compatible, docs added; not dogfooded                     |
+| GitHub Copilot CLI         | local/stdio MCP | Compatible, docs added; not dogfooded                     |
+| GitHub Copilot cloud agent | local MCP       | Compatible with environment constraints                   |
+| DeepSeek Harness           | MCP             | Integration guide added; verification and dogfood pending |
+| Codex CLI                  | MCP             | Documentation pending verification                        |
 
 “Compatible” means that the client's documented local MCP process shape matches
 CIRelay. It does not mean that the integration has completed the same real-run
@@ -147,6 +148,21 @@ Copilot coding agent](https://docs.github.com/en/copilot/customizing-copilot/ext
 
 Codex CLI integration is planned/documentation pending verification of the
 current MCP configuration interface.
+
+## DeepSeek Harness
+
+**Status: Integration path documented; Harness configuration verification and
+runtime dogfood pending.**
+
+The intended agent-neutral integration has Harness spawn `npx -y
+@cirelay/mcp@alpha` as a local stdio MCP subprocess. The preparation environment
+could not access the current official Harness documentation or repository, so
+no unverified Harness configuration syntax, configuration location,
+environment-injection behavior, tool-discovery behavior, or native skill API is
+presented as fact. See the dedicated [DeepSeek Harness integration
+guide](integrations/deepseek-harness.md) for the client-neutral setup, security
+requirements, expected automatic-selection scenario, and manual dogfood
+checklist.
 
 ## Security
 
