@@ -275,14 +275,11 @@ describe('MCP server', () => {
     });
 
     expect(result.isError).toBe(true);
-    expect(result.content).toMatchObject([
-      {
-        type: 'text',
-        text: expect.stringContaining(
-          'runId cannot be combined with commitSha, pullRequestNumber, or branch',
-        ),
-      },
-    ]);
+    const text =
+      (result.content as Array<{ type: string; text: string }>)[0]?.text ?? '';
+    expect(text).toContain(
+      'runId cannot be combined with commitSha, pullRequestNumber, or branch',
+    );
     await Promise.all([client.close(), server.close()]);
   });
 });
