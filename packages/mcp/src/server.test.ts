@@ -45,7 +45,7 @@ describe('MCP server', () => {
 
     expect(description('list_ci_runs')).toMatch(/preferred tool to resolve/i);
     expect(description('list_ci_runs')).toMatch(
-      /PR, commit, branch, conclusion, or recency/,
+      /at most one primary selector/i,
     );
     expect(description('get_ci_status')).toMatch(
       /pass\/fail or recent-status/i,
@@ -57,6 +57,9 @@ describe('MCP server', () => {
     expect(description('get_failure_context')).toContain('structured evidence');
     expect(description('get_failure_context')).toMatch(
       /deterministic.*evidence/,
+    );
+    expect(description('get_failure_context')).toMatch(
+      /runId alone; do not repeat commitSha, pullRequestNumber, or branch/,
     );
     expect(description('search_job_logs')).toMatch(/targeted follow-up/i);
     expect(description('search_job_logs')).toContain(
@@ -151,26 +154,47 @@ describe('MCP server', () => {
     await Promise.all([client.close(), server.close()]);
   });
 
-  it('advertises query selectors without requiring runId', async () => {
-    const { client, server } = await connectedClient();
-    const tool = (await client.listTools()).tools.find(
-      ({ name }) => name === 'get_failure_context',
-    );
+  it.each(['list_ci_runs', 'get_failure_context'])(
+    '%s advertises mutually exclusive selectors without requiring one',
+    async (toolName) => {
+      const { client, server } = await connectedClient();
+      const tool = (await client.listTools()).tools.find(
+        ({ name }) => name === toolName,
+      );
 
-    expect(tool?.inputSchema.required).toEqual(['owner', 'repository']);
-    expect(tool?.inputSchema.properties).toMatchObject({
-      runId: {},
-      commitSha: {},
-      pullRequestNumber: {},
-      branch: {},
-      conclusion: {},
-      latest: {},
-      limit: {},
-      sourcePolicy: {},
-      extractionProfile: {},
-    });
-    await Promise.all([client.close(), server.close()]);
-  });
+      expect(tool?.inputSchema.required).toEqual(['owner', 'repository']);
+      expect(tool?.inputSchema.properties).toMatchObject({
+        runId: {},
+        commitSha: {},
+        pullRequestNumber: {},
+        branch: {},
+        conclusion: {},
+        latest: {},
+        limit: {},
+      });
+      const properties = tool?.inputSchema.properties as
+        Record<string, { description?: string }> | undefined;
+      expect(properties?.runId?.description).toMatch(
+        /mutually exclusive with commitSha, pullRequestNumber, and branch/i,
+      );
+      expect(properties?.runId?.description).toMatch(/pass runId alone/i);
+      expect(properties?.commitSha?.description).toMatch(
+        /do not send when runId, pullRequestNumber, or branch is present/i,
+      );
+      expect(properties?.pullRequestNumber?.description).toMatch(
+        /mutually exclusive with runId, commitSha, and branch/i,
+      );
+      expect(properties?.branch?.description).toMatch(
+        /mutually exclusive with runId, commitSha, and pullRequestNumber/i,
+      );
+      for (const modifier of ['conclusion', 'latest', 'limit']) {
+        expect(properties?.[modifier]?.description).toMatch(
+          /not a primary run selector/i,
+        );
+      }
+      await Promise.all([client.close(), server.close()]);
+    },
+  );
 
   it('accepts an explicit failure-context source policy', async () => {
     const { client, server } = await connectedClient();
@@ -235,6 +259,30 @@ describe('MCP server', () => {
     });
 
     expect(result.isError).toBe(true);
+    await Promise.all([client.close(), server.close()]);
+  });
+
+  it('preserves deterministic runtime rejection of combined primary selectors', async () => {
+    const { client, server } = await connectedClient();
+    const result = await client.callTool({
+      name: 'get_failure_context',
+      arguments: {
+        owner: 'acme',
+        repository: 'app',
+        runId: '7',
+        commitSha: 'head',
+      },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.content).toMatchObject([
+      {
+        type: 'text',
+        text: expect.stringContaining(
+          'runId cannot be combined with commitSha, pullRequestNumber, or branch',
+        ),
+      },
+    ]);
     await Promise.all([client.close(), server.close()]);
   });
 });

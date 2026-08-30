@@ -110,6 +110,50 @@ describe('run resolution', () => {
     ).rejects.toBeInstanceOf(RunResolutionError);
   });
 
+  it('rejects runId combined with another primary selector deterministically', async () => {
+    await expect(
+      resolveRuns(provider(), {
+        repository,
+        runId: '123',
+        commitSha: 'abc',
+      }),
+    ).rejects.toMatchObject({
+      code: 'invalid-query',
+      message:
+        'runId cannot be combined with commitSha, pullRequestNumber, or branch',
+    });
+  });
+
+  it.each([
+    { runId: '123' },
+    { commitSha: 'abc', latest: true },
+    { branch: 'main', conclusion: 'failure' as const, latest: true },
+    { conclusion: 'failure' as const, latest: true },
+  ])('accepts valid query form %#', async (query) => {
+    await expect(
+      resolveRuns(provider([run('123', '2026-01-01T00:00:00Z')]), {
+        repository,
+        ...query,
+      }),
+    ).resolves.toHaveLength(1);
+  });
+
+  it('accepts a pull request selector with the latest modifier', async () => {
+    const fixture = provider([run('123', '2026-01-01T00:00:00Z')]);
+    fixture.getPullRequest = vi.fn().mockResolvedValue({
+      number: 42,
+      headSha: 'pr-head',
+      baseSha: 'base',
+    });
+    await expect(
+      resolveRuns(fixture, {
+        repository,
+        pullRequestNumber: 42,
+        latest: true,
+      }),
+    ).resolves.toHaveLength(1);
+  });
+
   it.each([0, -1, 1.5])(
     'rejects invalid pull request number %s',
     async (pullRequestNumber) => {
