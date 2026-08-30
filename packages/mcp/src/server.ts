@@ -2,6 +2,7 @@ import type { CiProvider } from '@cirelay/core';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+import { PACKAGE_VERSION } from './build-metadata.js';
 import { CiToolHandlers } from './handlers.js';
 import { TOOL_DESCRIPTIONS } from './tool-descriptions.js';
 
@@ -33,7 +34,7 @@ const output = (value: unknown) => ({
 });
 
 export function createMcpServer(provider: CiProvider): McpServer {
-  const server = new McpServer({ name: 'cirelay', version: '0.1.0-alpha.3' });
+  const server = new McpServer({ name: 'cirelay', version: PACKAGE_VERSION });
   const handlers = new CiToolHandlers(provider);
   server.tool(
     'list_ci_runs',

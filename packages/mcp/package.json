@@ -1,6 +1,6 @@
 {
   "name": "@cirelay/mcp",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "description": "Local stdio MCP server exposing GitHub Actions failure context to coding agents",
   "license": "Apache-2.0",
   "repository": {
@@ -38,8 +38,9 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "build": "node ../../scripts/prepare-mcp-build.mjs && tsc -p tsconfig.json",
+    "prepack": "pnpm run build",
+    "typecheck": "node ../../scripts/prepare-mcp-build.mjs --no-clean && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@cirelay/core": "0.1.0-alpha.3",
