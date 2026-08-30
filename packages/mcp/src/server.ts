@@ -11,10 +11,35 @@ const repositoryShape = {
   repository: z.string().min(1),
 };
 const runSelectorShape = {
-  runId: z.string().min(1).optional(),
-  commitSha: z.string().min(1).optional(),
-  pullRequestNumber: z.number().int().positive().optional(),
-  branch: z.string().min(1).optional(),
+  runId: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      'Exact CI run selector. Mutually exclusive with commitSha, pullRequestNumber, and branch. When runId is known, pass runId alone.',
+    ),
+  commitSha: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      'Resolve a CI run by commit. Do not send when runId, pullRequestNumber, or branch is present.',
+    ),
+  pullRequestNumber: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      'Resolve the pull request head CI run. Mutually exclusive with runId, commitSha, and branch.',
+    ),
+  branch: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      'Resolve a CI run by branch. Mutually exclusive with runId, commitSha, and pullRequestNumber.',
+    ),
   conclusion: z
     .enum([
       'success',
@@ -25,9 +50,19 @@ const runSelectorShape = {
       'timed_out',
       'action_required',
     ])
-    .optional(),
-  latest: z.boolean().optional(),
-  limit: z.number().int().positive().max(100).optional(),
+    .optional()
+    .describe('Conclusion filter; not a primary run selector'),
+  latest: z
+    .boolean()
+    .optional()
+    .describe('Recency modifier; not a primary run selector'),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .max(100)
+    .optional()
+    .describe('Maximum result-count modifier; not a primary run selector'),
 };
 const output = (value: unknown) => ({
   content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }],
