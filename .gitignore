@@ -4,3 +4,9 @@ packages/mcp/src/build-metadata.ts
 coverage/
 .env
 *.log
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.venv/

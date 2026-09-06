@@ -33,6 +33,15 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@22.20.1)
 
+  apps/strands-agent:
+    dependencies:
+      '@cirelay/github':
+        specifier: workspace:*
+        version: link:../../packages/github
+      '@cirelay/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
+
   apps/webhook-server:
     dependencies:
       '@cirelay/core':

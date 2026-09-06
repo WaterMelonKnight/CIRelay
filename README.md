@@ -50,6 +50,9 @@ handling.
 
 ## Agent integrations
 
+For the isolated AWS Agents for Humans hackathon adapter and its one-command
+Strands Agent demo, see [Strands CI agent](docs/agents-for-humans.md).
+
 CIRelay is coding-agent-neutral infrastructure: any coding agent that supports
 local stdio MCP servers can use its standard MCP interface. Claude Code is the
 primary, end-to-end dogfooded integration; the other compatible clients below
