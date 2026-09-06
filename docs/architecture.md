@@ -27,6 +27,9 @@ flowchart LR
 - `packages/mcp`: official MCP SDK stdio transport and tool handlers. Handlers receive any `CiProvider`; only the executable chooses GitHub.
 - `packages/cli`: deliberately small command entry point.
 - `apps/webhook-server`: future push-mode boundary. M0 provides health behavior and provider-event parsing, but no signature verification or delivery endpoint.
+- `apps/strands-agent`: optional hackathon-only outer adapter. Its Python tools
+  call a narrow Node subprocess bridge into the existing handlers; Strands does
+  not enter the core or provider dependency path.
 
 ## Run resolution and failure context
 
