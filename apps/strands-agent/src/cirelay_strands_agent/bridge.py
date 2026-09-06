@@ -17,7 +17,7 @@ class NodeCiRelayBridge:
     """Invoke the narrow Node bridge once per CIRelay operation."""
 
     def __init__(self, command: list[str] | None = None) -> None:
-        default = Path(__file__).parents[3] / "dist" / "main.js"
+        default = Path(__file__).parents[2] / "dist" / "main.js"
         self.command = command or ["node", str(default)]
 
     def call(self, operation: str, arguments: dict[str, Any]) -> Any:

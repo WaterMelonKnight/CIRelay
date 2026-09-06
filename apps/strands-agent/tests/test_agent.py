@@ -1,6 +1,10 @@
+import os
+import subprocess
+from pathlib import Path
 from typing import Any
 
 from cirelay_strands_agent import create_agent
+from cirelay_strands_agent.bridge import NodeCiRelayBridge
 from cirelay_strands_agent.tools import create_tools
 
 
@@ -47,3 +51,29 @@ def test_agent_registers_only_intended_tools() -> None:
     assert set(agent.tool_registry) == {"list_ci_runs", "get_failure_context"}
     assert "raw" not in " ".join(agent.tool_registry)
     assert "shell" not in " ".join(agent.tool_registry)
+
+
+def test_default_bridge_path_points_to_built_entrypoint() -> None:
+    bridge = NodeCiRelayBridge()
+    app_root = Path(__file__).parents[1]
+    assert bridge.command == ["node", str(app_root / "dist" / "main.js")]
+
+
+def test_built_bridge_entrypoint_starts_without_network() -> None:
+    bridge = NodeCiRelayBridge()
+    entrypoint = Path(bridge.command[1])
+    assert entrypoint.is_file(), "run `pnpm build` before the Python tests"
+
+    environment = os.environ.copy()
+    environment.pop("GITHUB_TOKEN", None)
+    completed = subprocess.run(
+        bridge.command,
+        input="{}",
+        text=True,
+        capture_output=True,
+        env=environment,
+        check=False,
+    )
+
+    assert completed.returncode != 0
+    assert "GITHUB_TOKEN is required" in completed.stderr
