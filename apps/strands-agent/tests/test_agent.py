@@ -1,7 +1,9 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+
+import pytest
 
 from cirelay_strands_agent import create_agent
 from cirelay_strands_agent.bridge import NodeCiRelayBridge
@@ -47,10 +49,56 @@ def test_failure_context_returns_structured_evidence() -> None:
 
 
 def test_agent_registers_only_intended_tools() -> None:
-    agent = create_agent(FakeClient(), model="test-model")
+    agent = cast(Any, create_agent(FakeClient(), model="test-model"))
     assert set(agent.tool_registry) == {"list_ci_runs", "get_failure_context"}
     assert "raw" not in " ".join(agent.tool_registry)
     assert "shell" not in " ".join(agent.tool_registry)
+
+
+def test_default_provider_uses_bedrock_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("STRANDS_MODEL_PROVIDER", raising=False)
+    monkeypatch.delenv("STRANDS_MODEL_ID", raising=False)
+
+    agent = cast(Any, create_agent(FakeClient()))
+
+    assert agent.model == "us.amazon.nova-pro-v1:0"
+
+
+def test_openai_provider_uses_strands_openai_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = FakeClient()
+    monkeypatch.setenv("STRANDS_MODEL_PROVIDER", "openai")
+    monkeypatch.delenv("STRANDS_MODEL_ID", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    agent = cast(Any, create_agent(client))
+
+    assert type(agent.model).__name__ == "FakeOpenAIModel"
+    assert agent.model.config == {"model_id": "gpt-4o-mini"}
+    assert set(agent.tool_registry) == {"list_ci_runs", "get_failure_context"}
+    agent.tool_registry["get_failure_context"]("WaterMelonKnight/CIRelay", "42")
+    assert client.calls == [
+        (
+            "get_failure_context",
+            {
+                "repository": {"owner": "WaterMelonKnight", "name": "CIRelay"},
+                "runId": "42",
+            },
+        )
+    ]
+
+
+def test_unsupported_provider_fails_clearly(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("STRANDS_MODEL_PROVIDER", "other")
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "unsupported STRANDS_MODEL_PROVIDER 'other'; expected 'bedrock' or 'openai'"
+        ),
+    ):
+        create_agent(FakeClient())
 
 
 def test_default_bridge_path_points_to_built_entrypoint() -> None:
