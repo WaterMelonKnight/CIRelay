@@ -1,5 +1,6 @@
 import os
 import subprocess
+import ast
 from pathlib import Path
 from typing import Any, cast
 
@@ -87,6 +88,31 @@ def test_openai_provider_uses_strands_openai_model(
             },
         )
     ]
+
+
+def test_deepseek_model_disables_thinking(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("STRANDS_MODEL_PROVIDER", "openai")
+    monkeypatch.setenv("STRANDS_MODEL_ID", "deepseek-v4-flash")
+
+    agent = cast(Any, create_agent(FakeClient()))
+
+    assert agent.model.config == {
+        "model_id": "deepseek-v4-flash",
+        "params": {"extra_body": {"thinking": {"type": "disabled"}}},
+    }
+
+
+def test_cli_does_not_print_agent_result() -> None:
+    app_root = Path(__file__).parents[1]
+    main_module = app_root / "src" / "cirelay_strands_agent" / "__main__.py"
+    tree = ast.parse(main_module.read_text())
+
+    assert not any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "print"
+        for node in ast.walk(tree)
+    )
 
 
 def test_unsupported_provider_fails_clearly(monkeypatch: pytest.MonkeyPatch) -> None:
