@@ -131,7 +131,7 @@ Bedrock is the adapter's default AWS-oriented model path. During hackathon devel
 
 ### Demonstrated working path
 
-The recorded and validated end-to-end demo used:
+The validated end-to-end demo used:
 
 ```sh
 export STRANDS_MODEL_PROVIDER=openai
@@ -155,11 +155,11 @@ This configuration uses DeepSeek through an OpenAI-compatible API path supported
 
 The model working through Strands interprets the evidence; CIRelay retrieves and reduces it deterministically.
 
-## Pre-existing work disclosure
+## Work provenance and scope
 
-CIRelay existed as an open-source CI feedback infrastructure project before the AWS Agents for Humans submission period.
+The public CIRelay repository was created on August 16, 2026, during the official AWS Agents for Humans submission period.
 
-**Pre-existing components reused by the submission:**
+**CIRelay infrastructure developed earlier in the same submission period and reused by the Strands agent:**
 
 - provider-neutral CIRelay core;
 - GitHub Actions provider;
@@ -168,7 +168,7 @@ CIRelay existed as an open-source CI feedback infrastructure project before the 
 - `FailureContext` domain model; and
 - existing evidence-first CIRelay workflow.
 
-**New hackathon-specific work:**
+**Strands-specific work added later during the same submission period:**
 
 - Strands Agents-based CI investigation agent;
 - focused Strands tool surface: `list_ci_runs` and `get_failure_context`;
@@ -180,7 +180,7 @@ CIRelay existed as an open-source CI feedback infrastructure project before the 
 - DeepSeek-compatible demo polish; and
 - hackathon-specific tests, documentation, and demo workflow.
 
-The submitted hackathon project is the new CIRelay Strands CI Agent built on top of the pre-existing CIRelay open-source infrastructure. The submission does not represent the entire repository as hackathon-period work.
+The submitted project is CIRelay Strands CI Agent, built during the official submission period on top of CIRelay components that were also developed during that period.
 
 ## Current limitations
 
@@ -189,7 +189,8 @@ The submitted hackathon project is the new CIRelay Strands CI Agent built on top
 - The Strands hackathon adapter uses a thin Python-to-Node subprocess bridge.
 - The raw-log cache is process-local and ephemeral.
 - There is no hosted multi-tenant service or persistent historical failure database.
-- There is no completed webhook push path, failure fingerprinting, or automatic diff correlation yet.
+- There is no completed webhook push path or failure fingerprinting yet.
+- Changed files may already be attached to `FailureContext` when pull-request context is available, but automatic failure-to-diff semantic correlation or ranking is not implemented yet.
 - There is no AgentCore deployment.
 - Bedrock end-to-end validation could not be completed on the development account because of account-level allowlisting/compliance.
 
