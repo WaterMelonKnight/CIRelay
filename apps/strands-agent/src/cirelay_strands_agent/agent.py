@@ -31,7 +31,13 @@ def _configured_model() -> Any:
     if provider == "openai":
         from strands.models.openai import OpenAIModel
 
-        return OpenAIModel(model_id=model_id or OPENAI_MODEL_ID)
+        selected_model_id = model_id or OPENAI_MODEL_ID
+        if selected_model_id.startswith("deepseek-"):
+            return OpenAIModel(
+                model_id=selected_model_id,
+                params={"extra_body": {"thinking": {"type": "disabled"}}},
+            )
+        return OpenAIModel(model_id=selected_model_id)
     raise ValueError(
         "unsupported STRANDS_MODEL_PROVIDER "
         f"{provider!r}; expected 'bedrock' or 'openai'"
