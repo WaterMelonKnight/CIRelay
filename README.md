@@ -48,10 +48,20 @@ Claude Code's MCP configuration. See the shared [integration security
 guidance](docs/integrations.md#security) for credential permissions and
 handling.
 
-## Agent integrations
+## CIRelay Strands CI Agent — AWS Agents for Humans 2026
 
-For the isolated AWS Agents for Humans hackathon adapter and its one-command
-Strands Agent demo, see [Strands CI agent](docs/agents-for-humans.md).
+CIRelay Strands CI Agent is a professional agent built with the Strands Agents SDK that investigates failed CI runs from a natural-language request. The demonstrated workflow uses real GitHub Actions data:
+
+```text
+Developer -> Strands Agent -> list_ci_runs -> get_failure_context
+          -> CIRelay structured evidence -> Agent diagnosis + next action
+```
+
+The Strands Agent owns the agent loop, CIRelay owns deterministic CI evidence retrieval and reduction, and the language model owns semantic inference. For this focused hackathon demo, the agent intentionally exposes only two CIRelay tools: `list_ci_runs` and `get_failure_context`.
+
+Read the [complete AWS Agents for Humans submission](docs/agents-for-humans.md), including the architecture, validated end-to-end result, setup, and limitations.
+
+## Agent integrations
 
 CIRelay is coding-agent-neutral infrastructure: any coding agent that supports
 local stdio MCP servers can use its standard MCP interface. Claude Code is the
