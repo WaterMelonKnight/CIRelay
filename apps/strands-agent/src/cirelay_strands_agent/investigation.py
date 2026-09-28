@@ -253,8 +253,11 @@ def build_structured_diagnosis(
         if state.phase == "completed"
         else state.escalation_reason
     )
+    status: DiagnosisStatus = (
+        "completed" if state.phase == "completed" else "escalated"
+    )
     return StructuredDiagnosis(
-        status=state.phase,
+        status=status,
         task=state.task,
         repository=state.repository,
         run_id=state.run_id,
