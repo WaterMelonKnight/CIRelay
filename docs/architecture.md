@@ -25,7 +25,7 @@ flowchart LR
 - `packages/core`: provider-neutral references, run/job/step models, `CiProvider`, evidence extraction, and `FailureContext` construction. Its runtime dependency is js-yaml for bounded declarative repository configuration.
 - `packages/github`: translates GitHub Actions API payloads to core types. Octokit and token authentication stop at this boundary.
 - `packages/mcp`: official MCP SDK stdio transport and tool handlers. Handlers receive any `CiProvider`; only the executable chooses GitHub.
-- `packages/agent`: private TypeScript investigation state machine. It depends inward on core types, owns immutable state, evidence/hypothesis references and termination guards, and has no model SDK, executor or tool loop yet. See [CI Investigation Sub-Agent](ci-investigation-sub-agent.md).
+- `packages/agent`: private TypeScript investigation state machine and bounded controller. It depends on core types and reuses `CiToolHandlers` from MCP through an executor session; planners and executors are injectable. No model SDK is integrated. See [CI Investigation Sub-Agent](ci-investigation-sub-agent.md).
 - `packages/cli`: deliberately small command entry point.
 - `apps/webhook-server`: future push-mode boundary. M0 provides health behavior and provider-event parsing, but no signature verification or delivery endpoint.
 - `apps/strands-agent`: optional hackathon-only outer adapter. Its Python tools
@@ -157,11 +157,13 @@ M0 requests only the first GitHub API page and exposes underlying API failures. 
 The production investigation direction is TypeScript-native in `packages/agent`.
 The state machine proposes no semantic root cause itself: an external caller
 supplies hypotheses/diagnosis, and deterministic transitions validate citations,
-completion eligibility and bounded progress. Actions must be admitted before a
-future executor dispatches them. A pending observation is correlated by action ID.
+completion eligibility and bounded progress. Actions must be admitted before the
+executor dispatches them. A pending observation is correlated by action ID.
 Core extraction, GitHub transport and public MCP tools keep their existing APIs.
 The Python Strands application remains a functional hackathon demo, separate from
-this foundation. The next phase adds an injected bounded tool loop above these
-contracts, reusing existing handlers and one log-source session rather than
-reimplementing extraction or search. No runtime editing, PR creation, model SDK,
+this foundation. The controller executes one injected planner decision at a time, reusing existing
+handlers and one log-source session per investigation rather than reimplementing
+extraction or search. The executor pins the repository, provider, run and commit,
+and permits log search only for failed jobs observed in that run. Core never
+depends on agent; MCP handlers and the Strands demo keep their existing APIs. No runtime editing, PR creation, model SDK,
 UI or storage is introduced.

@@ -44,6 +44,7 @@ export type EscalationReason =
   | 'ambiguous-evidence'
   | 'no-failed-run'
   | 'tool-error'
+  | 'planner-error'
   | 'unsupported-capability';
 
 export interface DiagnosisInput {
@@ -93,6 +94,11 @@ export interface Observation {
   readonly summary: string;
   /** Executor failures consume a step and terminate with tool-error. */
   readonly error?: string;
+  /** Known executor outcomes that cannot produce a successful diagnosis. */
+  readonly escalation?: {
+    readonly reason: EscalationReason;
+    readonly detail: string;
+  };
   readonly resolvedRunId?: string;
   readonly evidence: readonly EvidenceItem[];
 }
@@ -118,7 +124,10 @@ export type Termination =
       readonly detail: string;
     };
 
+export type InvestigationPurpose = 'root-cause' | 'status-only';
+
 export interface InvestigationState {
+  readonly purpose: InvestigationPurpose;
   readonly task: string;
   readonly repository: Readonly<RepositoryRef>;
   readonly phase:
@@ -144,6 +153,7 @@ export interface InvestigationState {
 }
 
 export interface StructuredDiagnosis {
+  readonly purpose: InvestigationPurpose;
   readonly task: string;
   readonly repository: Readonly<RepositoryRef>;
   readonly runId?: string;
