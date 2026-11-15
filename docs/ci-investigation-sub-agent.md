@@ -1,8 +1,8 @@
 # TypeScript CI Investigation Sub-Agent foundation
 
 `packages/agent` (`@cirelay/agent`, private) is the model-independent state
-foundation for a future bounded CI investigator. This phase has no planner,
-executor, model SDK, or running agent loop. The existing public alpha and Python
+foundation and bounded execution loop for a CI investigator. The planner and
+executor are injectable TypeScript interfaces; no model SDK is integrated. The existing public alpha and Python
 Strands hackathon demo retain their APIs and execution paths.
 
 ## Consolidating the earlier proposals
@@ -33,10 +33,11 @@ validity is enforceable here, calibrated semantic confidence is not.
 
 ## Contracts and transitions
 
-Dependency direction is `@cirelay/agent -> @cirelay/core` (shared type imports).
+Dependency direction is `@cirelay/agent -> @cirelay/core` (shared types and errors)
+and `@cirelay/agent -> @cirelay/mcp` (existing `CiToolHandlers`).
 Core does not depend on agent. `RepositoryRef`, `CiRunQuery`, search query fields,
 failure-context options and evidence categories reuse core contracts. Evidence
-normalization will consume existing extraction/search results; this package does
+normalization consumes existing extraction/search results; this package does
 not parse logs or duplicate tool handlers.
 
 ```text
@@ -51,7 +52,7 @@ createInvestigation(task, repository, limits)
 ```
 
 Only the pending action may receive an observation. Dispatch another action only
-after committing its observation. A future executor must use the pending action
+after committing its observation. The executor uses the pending action
 and ID returned by the state machine, never the original unvalidated proposal.
 Executor failures are observations with `error` and no evidence/run resolution;
 they consume the pending step and escalate as `tool-error`.
@@ -86,7 +87,8 @@ current hypothesis set explicitly before stopping. This is structural validation
 not a claim that code can prove the semantic truth of a model's inference.
 
 Escalation reasons are `step-budget-exhausted`, `repeated-action`, `no-progress`,
-`ambiguous-evidence`, `no-failed-run`, `tool-error`, and `unsupported-capability`.
+`ambiguous-evidence`, `no-failed-run`, `tool-error`, `planner-error`, and
+`unsupported-capability`.
 Successful completion uses `sufficient-evidence`. Escalated results preserve all
 observed evidence, hypotheses and questions without fabricating a successful
 diagnosis. No transition can reopen or overwrite a terminal result.
@@ -115,15 +117,67 @@ Python compatibility remains checked separately with
 `.venv/bin/python -m pytest apps/strands-agent/tests` when the demo dependencies
 are installed.
 
-Next: implement a bounded TypeScript investigation tool loop with an injected
-planner/executor and fixture normalizers for `list_ci_runs`, `get_failure_context`,
-and `search_job_logs`. Reuse a single handler/log-source session per investigation
-so raw-log cache lifetime spans actions. #29 correctly identifies that the Python
-demo's fresh Node subprocess per operation does not share that cache. Keep the
-existing evidence-first sequence; raw whole logs remain an explicit future
-fallback, not a foundation action. Add scripted evals for sufficient context,
-search disambiguation, persistent ambiguity, missing runs, tool errors and bounds
-before considering a model adapter.
+## Phase 2: bounded execution loop
+
+`InvestigationPlanner.plan(state)` returns one `InvestigationDecision`: a required
+action and optional hypotheses/blocking questions. `InvestigationExecutor.execute`
+receives the admitted pending state and returns a correlated `Observation`.
+`runInvestigation` owns transitions, validates decisions, and dispatches sequentially.
+A decision cannot be a revise-only turn. The controller makes at most the remaining
+tool budget plus one final planning call, giving the last observation a chance to
+support a stop. Repetition and budget guards run before execution; no-progress is
+checked when observations commit. A terminal input is returned without replanning;
+a pending input is rejected (there is no resume/persistence protocol).
+
+Create one executor for each investigation:
+
+```ts
+const initial = createInvestigation(task, repository);
+const executor = createHandlerExecutor(provider, repository);
+const terminal = await runInvestigation(initial, planner, executor);
+const result = buildStructuredDiagnosis(terminal);
+```
+
+The caller supplies a trusted TypeScript planner and a `CiProvider` (including the
+existing GitHub provider). No credentials or network services are needed for the
+fixture tests. Planners must return; executors/providers must settle their
+operations. Bounds cover decisions/tool steps, not wall-clock cancellation of
+arbitrary injected promises. There is no model JSON ingestion in this phase.
+
+The executor retains one `CiToolHandlers` with one process-local log source/cache
+for `list_ci_runs -> get_failure_context -> search_job_logs`. It never recreates
+handlers between actions or shares a cache between investigations. Explicit
+`cache-only`/`refresh` options retain their existing core meanings. The Python
+demo's separate subprocess bridge remains unchanged and still does not share
+that cache across its own calls.
+
+Run resolution uses core query semantics: multiple matches without `latest` or an
+exact selector escalate as ambiguous; missing runs or a selected nonfailed run
+escalate as `no-failed-run`. Only completed `failure`/`timed_out` runs are investigated.
+A known 404 is absence; opaque wrapped provider errors remain tool errors, not
+proof of missing CI. Unsupported PR lookup retains `unsupported-capability`.
+
+FailureContext facts come directly from core extraction. Failed-job metadata is
+also retained so an empty log/step list still exposes the job identity. Search
+facts come from bounded match text and original line numbers. IDs hash normalized
+source/content/provenance and omit generated timestamps and action IDs. Provider,
+run, job, line and available source URLs are retained; no model claims become
+observations. Foreign repository/provider/run/commit or job identities terminate
+without adding their facts. Jobs must appear in the selected run's failed context
+before the executor accepts a search; core never needs a second search implementation.
+
+Known executor escalations are recorded as observations with `escalation` and no
+evidence/run selection, consuming the admitted step. Thrown executor errors and
+malformed observations become `tool-error`. Planner exceptions, invalid citations,
+invalid stop conditions and illegal decisions become `planner-error`. Both paths
+retain prior evidence and terminate; there is no hidden retry. A proposed diagnosis
+is never accepted merely because the planner asks to stop.
+
+Fixture tests exercise real handlers with an injected provider: sufficient context,
+search disambiguation and cache reuse, ambiguity, missing/nonfailed runs, errors,
+budgets, repetition, no progress, immutable provenance, isolation and deterministic
+replay. Next: evaluate richer scripted investigation policies before considering
+any separately reviewed model adapter.
 
 Excluded: automatic code edits or PR creation by the runtime agent, A2A,
 multi-agent orchestration, UI, persistent storage, production credentials,

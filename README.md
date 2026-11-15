@@ -150,8 +150,10 @@ For most users, `npx -y @cirelay/mcp@alpha` is the simplest option.
 
 `packages/agent` is a private, model-independent foundation for a bounded CI
 Investigation Sub-Agent. It provides immutable state, evidence provenance,
-hypothesis/diagnosis validation and termination guards. The bounded tool loop is
-the next phase; current MCP tools and the Python Strands demo keep working.
+hypothesis/diagnosis validation and termination guards. Its bounded tool loop uses
+injected planners/executors and existing handlers with a shared investigation
+cache; no model SDK is integrated. Current MCP tools and the Python Strands demo
+keep working.
 See the [design and PR #28/#29 consolidation](docs/ci-investigation-sub-agent.md).
 
 ## Architecture

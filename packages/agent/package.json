@@ -18,6 +18,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@cirelay/core": "workspace:*"
+    "@cirelay/core": "workspace:*",
+    "@cirelay/mcp": "workspace:*"
   }
 }

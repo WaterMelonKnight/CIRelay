@@ -294,9 +294,12 @@ export function applyObservation(
     'Observation does not match pending action',
   );
   requireValue(text(observation.summary), 'Observation summary is required');
-  if (observation.error !== undefined) {
+  if (observation.error !== undefined || observation.escalation !== undefined) {
     requireValue(
-      text(observation.error) &&
+      (observation.error === undefined || text(observation.error)) &&
+        (observation.escalation === undefined ||
+          text(observation.escalation.detail)) &&
+        !(observation.error && observation.escalation) &&
         observation.evidence.length === 0 &&
         observation.resolvedRunId === undefined,
       'Tool errors cannot introduce evidence or resolve a run',
@@ -313,8 +316,9 @@ export function applyObservation(
       noProgressSteps: state.noProgressSteps + 1,
       termination: {
         status: 'escalated',
-        reason: 'tool-error',
-        detail: observation.error,
+        reason: observation.escalation?.reason ?? 'tool-error',
+        detail:
+          observation.escalation?.detail ?? observation.error ?? 'Tool failed',
       },
     });
   }

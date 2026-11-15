@@ -6,7 +6,7 @@ CIRelay turns CI failures into provider-neutral context for external coding agen
 
 - Dependency flow is provider adapter -> `@cirelay/core` <- transports such as MCP and CLI.
 - `packages/core` must remain independent of GitHub, MCP, DeepSeek Harness, and every specific provider.
-- Investigation state, hypotheses and termination belong in `packages/agent`, outside core. The Python Strands application remains a separate hackathon demo. The foundation has no runtime tool loop or model SDK yet.
+- Investigation state, hypotheses and termination belong in `packages/agent`, outside core. The Python Strands application remains a separate hackathon demo. The bounded loop uses injected planners/executors and existing handlers; it has no model SDK.
 - Never introduce an LLM or model SDK into the core path.
 - Keep tests network-independent by default; use fixtures and injected clients.
 - Avoid overengineering. Prefer small, reviewable changes and explicit interfaces.

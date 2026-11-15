@@ -21,8 +21,8 @@ budgets, repetition protection, no-progress escalation and typed termination.
 The Python Strands hackathon demo remains supported but is not the production
 agent foundation.
 
-Next phase: a bounded TypeScript investigation tool loop with injected planner
-and executor, existing CIRelay handlers, shared process-local log cache and
-fixture-driven behavioral evals. Model adapters follow only after deterministic
-loop validation. Automatic edits/PR creation, A2A, UI and persistent storage remain
+Phase 2 adds the bounded TypeScript investigation loop with injected planner
+and executor, existing CIRelay handlers, a per-investigation process-local log
+cache and deterministic fixture tests. Next: richer scripted policy evals; model
+adapters require a separate review after deterministic loop validation. Automatic edits/PR creation, A2A, UI and persistent storage remain
 outside this phase.
