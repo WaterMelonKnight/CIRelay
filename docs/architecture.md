@@ -22,9 +22,10 @@ flowchart LR
 
 ## Packages
 
-- `packages/core`: provider-neutral references, run/job/step models, `CiProvider`, evidence extraction, and `FailureContext` construction. Its only runtime dependency is Zod, reserved for neutral schemas as they evolve.
+- `packages/core`: provider-neutral references, run/job/step models, `CiProvider`, evidence extraction, and `FailureContext` construction. Its runtime dependency is js-yaml for bounded declarative repository configuration.
 - `packages/github`: translates GitHub Actions API payloads to core types. Octokit and token authentication stop at this boundary.
 - `packages/mcp`: official MCP SDK stdio transport and tool handlers. Handlers receive any `CiProvider`; only the executable chooses GitHub.
+- `packages/agent`: private TypeScript investigation state machine. It depends inward on core types, owns immutable state, evidence/hypothesis references and termination guards, and has no model SDK, executor or tool loop yet. See [CI Investigation Sub-Agent](ci-investigation-sub-agent.md).
 - `packages/cli`: deliberately small command entry point.
 - `apps/webhook-server`: future push-mode boundary. M0 provides health behavior and provider-event parsing, but no signature verification or delivery endpoint.
 - `apps/strands-agent`: optional hackathon-only outer adapter. Its Python tools
@@ -75,8 +76,8 @@ get_failure_context({
 });
 ```
 
-Profile selection is per request. Persistent repository configuration is deferred,
-and `search_job_logs` remains the agent-directed literal drill-down tool.
+Profile selection is per request, with declarative repository defaults described in
+[configuration](configuration.md). `search_job_logs` remains the agent-directed literal drill-down tool.
 
 ## Raw job-log retrieval
 
@@ -150,3 +151,17 @@ Future fingerprinting, last-success comparison, historical matching, framework p
 ## Deliberate limitations
 
 M0 requests only the first GitHub API page and exposes underlying API failures. Job-log responses vary across clients and redirects; the adapter supports text and byte responses but M1 should add integration tests and explicit error handling. The webhook server does not accept or authenticate events yet.
+
+## TypeScript investigation boundary
+
+The production investigation direction is TypeScript-native in `packages/agent`.
+The state machine proposes no semantic root cause itself: an external caller
+supplies hypotheses/diagnosis, and deterministic transitions validate citations,
+completion eligibility and bounded progress. Actions must be admitted before a
+future executor dispatches them. A pending observation is correlated by action ID.
+Core extraction, GitHub transport and public MCP tools keep their existing APIs.
+The Python Strands application remains a functional hackathon demo, separate from
+this foundation. The next phase adds an injected bounded tool loop above these
+contracts, reusing existing handlers and one log-source session rather than
+reimplementing extraction or search. No runtime editing, PR creation, model SDK,
+UI or storage is introduced.

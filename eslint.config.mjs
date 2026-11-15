@@ -3,7 +3,14 @@ import prettier from 'eslint-config-prettier';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/coverage/**', '**/node_modules/**'] },
+  {
+    ignores: [
+      '**/dist/**',
+      '**/coverage/**',
+      '**/node_modules/**',
+      '**/.venv/**',
+    ],
+  },
   eslint.configs.recommended,
   {
     // Type-aware rules require parser services, so they are scoped to TypeScript
