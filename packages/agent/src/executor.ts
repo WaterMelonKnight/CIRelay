@@ -88,8 +88,9 @@ export function createHandlerExecutor(
             'Run ID does not match the query',
           );
           if (
-            run.status !== 'completed' ||
-            (run.conclusion !== 'failure' && run.conclusion !== 'timed_out')
+            state.purpose === 'root-cause' &&
+            (run.status !== 'completed' ||
+              (run.conclusion !== 'failure' && run.conclusion !== 'timed_out'))
           ) {
             return {
               ...base,
@@ -103,12 +104,12 @@ export function createHandlerExecutor(
           selected = structuredClone(run);
           return {
             actionId,
-            summary: 'Resolved failed CI run',
+            summary: 'Resolved CI run',
             resolvedRunId: run.id,
             evidence: [
               evidence({
                 source: 'run-resolution',
-                message: `${run.name}: ${run.conclusion}`,
+                message: `${run.name}: ${run.conclusion ?? run.status}`,
                 provenance: {
                   provider: run.provider,
                   runId: run.id,

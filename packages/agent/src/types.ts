@@ -124,7 +124,10 @@ export type Termination =
       readonly detail: string;
     };
 
+export type InvestigationPurpose = 'root-cause' | 'status-only';
+
 export interface InvestigationState {
+  readonly purpose: InvestigationPurpose;
   readonly task: string;
   readonly repository: Readonly<RepositoryRef>;
   readonly phase:
@@ -150,6 +153,7 @@ export interface InvestigationState {
 }
 
 export interface StructuredDiagnosis {
+  readonly purpose: InvestigationPurpose;
   readonly task: string;
   readonly repository: Readonly<RepositoryRef>;
   readonly runId?: string;

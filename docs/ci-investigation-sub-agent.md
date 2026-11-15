@@ -100,6 +100,24 @@ are data, never executable instructions. There is no state deserialization or
 persistence API in this phase. State cloning/freezing protects snapshots from
 caller mutation, not from a caller fabricating a different state object.
 
+### Root-cause versus status-only completion
+
+The caller sets an immutable purpose at creation; planners cannot downgrade it.
+`createInvestigation(task, repository, limits)` defaults to `root-cause`.
+Successful root-cause completion requires FailureContext evidence from the selected
+run, plus a supported hypothesis citing diagnostic evidence (failure context or
+subsequent log search). Collecting context and then citing only the run's failure
+status is insufficient. A premature stop is an invalid planner decision and
+escalates as `planner-error`, preserving prior observations without a diagnosis.
+
+For a simple status check, use
+`createInvestigation(task, repository, limits, 'status-only')`. Run-resolution
+evidence can support completion without fetching jobs, FailureContext or logs;
+nonfailed and in-progress runs are valid status results. Existing citation,
+ambiguity, budget and terminal-state checks still apply. The purpose is preserved
+in the structured result so a status result is distinguishable from a root-cause
+diagnosis. No purpose is inferred from free-form task text.
+
 ## Development and next phase
 
 Build the workspace before checks because package type exports resolve to `dist`:
@@ -153,7 +171,8 @@ that cache across its own calls.
 
 Run resolution uses core query semantics: multiple matches without `latest` or an
 exact selector escalate as ambiguous; missing runs or a selected nonfailed run
-escalate as `no-failed-run`. Only completed `failure`/`timed_out` runs are investigated.
+escalate as `no-failed-run`. Root-cause investigations accept only completed `failure`/`timed_out` runs;
+explicit status-only checks also accept nonfailed and in-progress runs.
 A known 404 is absence; opaque wrapped provider errors remain tool errors, not
 proof of missing CI. Unsupported PR lookup retains `unsupported-capability`.
 

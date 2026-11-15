@@ -5,6 +5,7 @@ import type {
   Hypothesis,
   InvestigationAction,
   InvestigationLimits,
+  InvestigationPurpose,
   InvestigationState,
   Observation,
   StructuredDiagnosis,
@@ -58,8 +59,13 @@ export function createInvestigation(
   task: string,
   repository: Readonly<RepositoryRef>,
   limits: Partial<InvestigationLimits> = {},
+  purpose: InvestigationPurpose = 'root-cause',
 ): InvestigationState {
   requireValue(text(task), 'Task must not be empty');
+  requireValue(
+    purpose === 'root-cause' || purpose === 'status-only',
+    'Invalid investigation purpose',
+  );
   requireValue(
     [repository.owner, repository.name].every(
       (v) => text(v) && !/[\s/]/.test(v),
@@ -80,6 +86,7 @@ export function createInvestigation(
   }
   return snapshot({
     task,
+    purpose,
     repository,
     limits: configured,
     phase: 'resolving-run',
@@ -188,6 +195,25 @@ function validateDiagnosis(
       ),
     'Diagnosis must cite its hypothesis evidence',
   );
+  if (state.purpose === 'root-cause') {
+    requireValue(
+      state.evidence.some(
+        (item) =>
+          item.source === 'failure-context' &&
+          item.provenance.runId === state.runId,
+      ),
+      'Root-cause completion requires failure-context evidence from the selected run',
+    );
+    requireValue(
+      state.evidence.some(
+        (item) =>
+          item.source !== 'run-resolution' &&
+          item.provenance.runId === state.runId &&
+          selected.supportingEvidenceIds.includes(item.id),
+      ),
+      'Root-cause hypothesis requires diagnostic evidence',
+    );
+  }
 }
 
 /** Returns a pending action for a future executor, or terminates before dispatch. */
@@ -399,6 +425,7 @@ export function buildStructuredDiagnosis(
   );
   if (state.diagnosis) validateDiagnosis(state, state.diagnosis);
   return snapshot({
+    purpose: state.purpose,
     task: state.task,
     repository: state.repository,
     ...(state.runId ? { runId: state.runId } : {}),

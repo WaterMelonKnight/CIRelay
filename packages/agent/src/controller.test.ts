@@ -114,6 +114,80 @@ async function execute(
 }
 
 describe('investigation execution loop with real handlers and fixture provider', () => {
+  it.each(['failure', 'success', undefined] as const)(
+    'completes explicit status-only checks (%s) without logs',
+    async (conclusion) => {
+      const provider = fixture();
+      const { conclusion: _conclusion, ...activeRun } = run;
+      void _conclusion;
+      provider.listRuns.mockResolvedValue([
+        conclusion
+          ? { ...run, conclusion }
+          : { ...activeRun, status: 'in_progress' },
+      ]);
+      const initial = createInvestigation(
+        'Check CI status',
+        repository,
+        { maxSteps: 1 },
+        'status-only',
+      );
+      const result = await runInvestigation(
+        initial,
+        script([
+          () => ({ action: { kind: 'list_ci_runs', query: { latest: true } } }),
+          (state) => {
+            const decision = stop(state, 'run-resolution');
+            if (decision.action.kind !== 'stop') throw Error('Expected stop');
+            return {
+              ...decision,
+              action: {
+                ...decision.action,
+                diagnosis: {
+                  ...decision.action.diagnosis,
+                  summary: state.evidence[0]!.message,
+                  inference: 'Run status only; no root cause determined',
+                  nextAction: 'No diagnostic action requested',
+                },
+              },
+            };
+          },
+        ]),
+        createHandlerExecutor(provider, repository),
+      );
+      expect(result.termination?.status).toBe('completed');
+      expect(result.purpose).toBe('status-only');
+      expect(result.history).toHaveLength(1);
+      expect(provider.listJobs).not.toHaveBeenCalled();
+      expect(provider.getJobLog).not.toHaveBeenCalled();
+    },
+  );
+
+  it('still rejects a run-only root-cause hypothesis after unrelated context was collected', async () => {
+    const result = await execute(
+      script([
+        () => list,
+        () => context,
+        (state) => stop(state, 'run-resolution'),
+      ]),
+    );
+    expect(result.termination?.reason).toBe('planner-error');
+    expect(result.termination?.detail).toContain('diagnostic evidence');
+    expect(result.diagnosis).toBeUndefined();
+  });
+
+  it('rejects root-cause completion supported only by run-resolution evidence', async () => {
+    const provider = fixture();
+    const result = await execute(
+      script([() => list, (state) => stop(state, 'run-resolution')]),
+      provider,
+    );
+    expect(result.termination?.reason).toBe('planner-error');
+    expect(result.diagnosis).toBeUndefined();
+    expect(result.history).toHaveLength(1);
+    expect(provider.listJobs).not.toHaveBeenCalled();
+    expect(provider.getJobLog).not.toHaveBeenCalled();
+  });
+
   it('distinguishes an exact-run 404 from an authorization failure', async () => {
     const provider = fixture();
     provider.getRun.mockRejectedValue(
