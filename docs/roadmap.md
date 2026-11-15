@@ -11,3 +11,18 @@
 - **M8 — providers:** additional adapters such as GitLab CI, Jenkins, Buildkite, and CircleCI.
 
 Each milestone should remain independently reviewable. Storage, queues, dashboards, or model-driven diagnosis should be justified by concrete requirements rather than added speculatively.
+
+## Bounded CI investigation
+
+The [TypeScript foundation](ci-investigation-sub-agent.md) in `packages/agent`
+consolidates the state-design proposals from PR #28 and PR #29. It provides
+immutable state, evidence provenance, hypothesis/diagnosis validation, tool-step
+budgets, repetition protection, no-progress escalation and typed termination.
+The Python Strands hackathon demo remains supported but is not the production
+agent foundation.
+
+Next phase: a bounded TypeScript investigation tool loop with injected planner
+and executor, existing CIRelay handlers, shared process-local log cache and
+fixture-driven behavioral evals. Model adapters follow only after deterministic
+loop validation. Automatic edits/PR creation, A2A, UI and persistent storage remain
+outside this phase.

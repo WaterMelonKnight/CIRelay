@@ -146,6 +146,14 @@ npm install @cirelay/mcp@alpha
 
 For most users, `npx -y @cirelay/mcp@alpha` is the simplest option.
 
+## TypeScript investigation foundation
+
+`packages/agent` is a private, model-independent foundation for a bounded CI
+Investigation Sub-Agent. It provides immutable state, evidence provenance,
+hypothesis/diagnosis validation and termination guards. The bounded tool loop is
+the next phase; current MCP tools and the Python Strands demo keep working.
+See the [design and PR #28/#29 consolidation](docs/ci-investigation-sub-agent.md).
+
 ## Architecture
 
 ```text
