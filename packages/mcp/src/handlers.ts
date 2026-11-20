@@ -1,6 +1,7 @@
 import {
   buildFailureContext,
   buildFailureContextForQuery,
+  compactFailureContext,
   resolveRuns,
   type CiRunQuery,
   type CiProvider,
@@ -55,27 +56,31 @@ export class CiToolHandlers {
       query.pullRequestNumber === undefined &&
       query.branch === undefined
     ) {
-      return buildFailureContext(
-        this.provider,
-        { repository: query.repository, runId: query.runId },
-        {
-          logSourcePolicy: sourcePolicy,
-          logSource: this.logSource,
-          ...(extractionProfile ? { extractionProfile } : {}),
-          ...(this.configSource
-            ? { repositoryConfigSource: this.configSource }
-            : {}),
-        },
+      return compactFailureContext(
+        await buildFailureContext(
+          this.provider,
+          { repository: query.repository, runId: query.runId },
+          {
+            logSourcePolicy: sourcePolicy,
+            logSource: this.logSource,
+            ...(extractionProfile ? { extractionProfile } : {}),
+            ...(this.configSource
+              ? { repositoryConfigSource: this.configSource }
+              : {}),
+          },
+        ),
       );
     }
-    return buildFailureContextForQuery(this.provider, query, {
-      logSourcePolicy: sourcePolicy,
-      logSource: this.logSource,
-      ...(extractionProfile ? { extractionProfile } : {}),
-      ...(this.configSource
-        ? { repositoryConfigSource: this.configSource }
-        : {}),
-    });
+    return compactFailureContext(
+      await buildFailureContextForQuery(this.provider, query, {
+        logSourcePolicy: sourcePolicy,
+        logSource: this.logSource,
+        ...(extractionProfile ? { extractionProfile } : {}),
+        ...(this.configSource
+          ? { repositoryConfigSource: this.configSource }
+          : {}),
+      }),
+    );
   }
 
   async searchJobLogs(query: JobLogSearchQuery) {

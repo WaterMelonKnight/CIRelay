@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   buildFailureContext,
   buildFailureContextForQuery,
+  compactFailureContext,
   extractLogEvidence,
   type CiProvider,
   type CiRun,
@@ -103,5 +104,82 @@ describe('failure context', () => {
       pullRequest: { number: 42, headSha: 'abc' },
       changedFiles: [{ path: 'src/failure.ts' }],
     });
+  });
+});
+
+describe('compactFailureContext', () => {
+  const base = (overrides: Record<string, unknown> = {}) =>
+    ({
+      provider: 'test',
+      repository: { owner: 'o', name: 'n' },
+      commitSha: 'abc',
+      run: {
+        id: '1',
+        provider: 'test',
+        repository: { owner: 'o', name: 'n' },
+        name: 'CI',
+        commit: { sha: 'abc' },
+        status: 'completed',
+        conclusion: 'failure',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      },
+      failedJobs: [
+        {
+          job: {
+            id: 'j',
+            runId: '1',
+            name: 'build',
+            status: 'completed',
+            conclusion: 'failure',
+            steps: [],
+          },
+          failedSteps: [],
+          logExcerpt: '[ERROR] boom',
+          errorLines: ['[ERROR] boom'],
+          stackTraceCandidates: ['at A.b(A.java:1)'],
+          ...overrides,
+        },
+      ],
+      changedFiles: [],
+      evidence: [
+        {
+          kind: 'error-line',
+          message: '[ERROR] boom',
+          jobId: 'j',
+          lineNumber: 1,
+          parser: 'maven',
+          category: 'build-failure',
+        },
+        {
+          kind: 'stack-trace',
+          message: 'at A.b(A.java:1)',
+          jobId: 'j',
+          lineNumber: 2,
+          parser: 'java',
+          category: 'stack-trace',
+        },
+      ],
+      generatedAt: '2026-01-01T00:00:00Z',
+    }) as unknown as Parameters<typeof compactFailureContext>[0];
+
+  it('drops the arrays that evidence already carries', () => {
+    const compact = compactFailureContext(base());
+    expect(compact.failedJobs[0]).not.toHaveProperty('errorLines');
+    expect(compact.failedJobs[0]).not.toHaveProperty('stackTraceCandidates');
+  });
+
+  it('drops the excerpt when every line is already in evidence', () => {
+    const compact = compactFailureContext(base());
+    expect(compact.failedJobs[0]).not.toHaveProperty('logExcerpt');
+  });
+
+  it('keeps the excerpt when it has context lines evidence does not carry', () => {
+    const compact = compactFailureContext(
+      base({ logExcerpt: '[INFO] setup\\n[ERROR] boom\\n[INFO] cleanup' }),
+    );
+    expect(compact.failedJobs.at(0)?.logExcerpt).toBe(
+      '[INFO] setup\\n[ERROR] boom\\n[INFO] cleanup',
+    );
   });
 });
