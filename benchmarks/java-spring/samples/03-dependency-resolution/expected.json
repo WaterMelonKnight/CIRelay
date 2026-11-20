@@ -1,0 +1,7 @@
+{
+  "name": "03-dependency-resolution",
+  "kind": "dependency-resolution",
+  "source": "mvn -B -ntp test with a dependency on a non-existent artifact com.example.nonexistent:ghost-artifact:9.9.9",
+  "mustInclude": ["ghost-artifact", "Could not resolve dependencies"],
+  "notes": "Fails before compilation; log is short but the coordinates matter"
+}

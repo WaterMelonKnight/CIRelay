@@ -1,0 +1,7 @@
+{
+  "name": "04-spring-context",
+  "kind": "application-context",
+  "source": "mvn -B -ntp test with a @SpringBootTest pointing at an unreachable datasource",
+  "mustInclude": ["Failed to load ApplicationContext", "ContextBoomTest"],
+  "notes": "Largest sample (~2.7k lines, ~227 KB): stack-trace heavy, the main token-reduction target"
+}

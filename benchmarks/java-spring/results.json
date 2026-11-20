@@ -1,0 +1,111 @@
+{
+  "summary": {
+    "samples": 5,
+    "rawTokens": 137120,
+    "contextTokens": 38131,
+    "reductionPct": 72.2,
+    "recallPct": 100,
+    "matched": 10,
+    "required": 10
+  },
+  "rows": [
+    {
+      "name": "01-compile-error",
+      "kind": "compile-error",
+      "rawChars": 4356,
+      "rawLines": 51,
+      "rawTokens": 1532,
+      "contextChars": 6561,
+      "contextTokens": 1700,
+      "reductionPct": -11,
+      "evidenceCount": 17,
+      "categories": [
+        "build-failure",
+        "compile-error",
+        "generic-error",
+        null
+      ],
+      "recall": 1,
+      "missing": []
+    },
+    {
+      "name": "02-test-assertion",
+      "kind": "test-failure",
+      "rawChars": 49696,
+      "rawLines": 343,
+      "rawTokens": 17466,
+      "contextChars": 31356,
+      "contextTokens": 9171,
+      "reductionPct": 47.5,
+      "evidenceCount": 64,
+      "categories": [
+        "build-failure",
+        "generic-error",
+        "stack-trace",
+        "test-failure",
+        null
+      ],
+      "recall": 1,
+      "missing": []
+    },
+    {
+      "name": "03-dependency-resolution",
+      "kind": "dependency-resolution",
+      "rawChars": 2178,
+      "rawLines": 25,
+      "rawTokens": 768,
+      "contextChars": 4652,
+      "contextTokens": 1225,
+      "reductionPct": -59.5,
+      "evidenceCount": 10,
+      "categories": [
+        "build-failure",
+        "generic-error",
+        null
+      ],
+      "recall": 1,
+      "missing": []
+    },
+    {
+      "name": "04-spring-context",
+      "kind": "application-context",
+      "rawChars": 307156,
+      "rawLines": 2754,
+      "rawTokens": 99897,
+      "contextChars": 64746,
+      "contextTokens": 16378,
+      "reductionPct": 83.6,
+      "evidenceCount": 97,
+      "categories": [
+        "application-context",
+        "build-failure",
+        "generic-error",
+        "stack-trace",
+        "test-failure",
+        null
+      ],
+      "recall": 1,
+      "missing": []
+    },
+    {
+      "name": "05-runtime-npe",
+      "kind": "runtime-exception",
+      "rawChars": 49630,
+      "rawLines": 342,
+      "rawTokens": 17457,
+      "contextChars": 32707,
+      "contextTokens": 9657,
+      "reductionPct": 44.7,
+      "evidenceCount": 65,
+      "categories": [
+        "build-failure",
+        "generic-error",
+        "stack-trace",
+        "test-failure",
+        null
+      ],
+      "recall": 1,
+      "missing": []
+    }
+  ]
+}
