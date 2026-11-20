@@ -50,11 +50,19 @@ Running the baseline (before the fixes in this branch) produced
 
 After both fixes: `72.2% token cut, 10/10 evidence recall`.
 
+3. **The same text was stored up to three times.** `errorLines` and
+   `stackTraceCandidates` are projections of `evidence`, and `logExcerpt` usually
+   repeats the evidence lines. `compactFailureContext()` (now what
+   `get_failure_context` returns) drops the derivable duplicates and keeps the
+   excerpt only when it carries context lines that evidence does not. Model-facing
+   cut: **79.9%**.
+
 ## Known limitations
 
-- **Short logs inflate.** Samples 01 and 03 are smaller than the FailureContext
-  envelope (run metadata, steps, evidence objects): −11% and −59% "reduction".
-  A pass-through above a size threshold would fix this; not done here.
+- **Very short logs still inflate.** 01 is now +7% (it was −11% before the compact
+  view), but 03 (`−34%`, a 19-line dependency-resolution log) is still net-negative:
+  below roughly 1k tokens the envelope costs more than the log. There is no
+  reduction to be had at that size — use the raw log.
 - **Synthetic CI, real Maven.** No GitHub Actions run was triggered; the wrapper is
   byte-shaped like Actions output but the run IDs are local fixtures.
 - **One repository.** All samples come from FinStream's stack; more languages and

@@ -13,7 +13,10 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { encode } from 'gpt-tokenizer';
-import { buildFailureContext } from '../../packages/core/dist/index.js';
+import {
+  buildFailureContext,
+  compactFailureContext,
+} from '../../packages/core/dist/index.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const samplesDir = path.join(here, 'samples');
@@ -85,7 +88,9 @@ async function evaluate(name) {
     { extractionProfile: 'java-spring', now: () => new Date(generatedAt) },
   );
 
-  const serialized = JSON.stringify(context);
+  // The model-facing payload is the compact view (what get_failure_context returns);
+  // the full object is kept for the API-level comparison.
+  const serialized = JSON.stringify(compactFailureContext(context));
   const haystack = serialized;
   const hits = expected.mustInclude.filter((needle) =>
     haystack.includes(needle),
@@ -96,6 +101,7 @@ async function evaluate(name) {
 
   const rawTokens = tokens(log);
   const contextTokens = tokens(serialized);
+  const fullTokens = tokens(JSON.stringify(context));
 
   return {
     name,
@@ -105,7 +111,9 @@ async function evaluate(name) {
     rawTokens,
     contextChars: serialized.length,
     contextTokens,
+    fullTokens,
     reductionPct: Number((100 * (1 - contextTokens / rawTokens)).toFixed(1)),
+    fullReductionPct: Number((100 * (1 - fullTokens / rawTokens)).toFixed(1)),
     evidenceCount: context.evidence.length,
     categories: [...new Set(context.evidence.map((e) => e.category))].sort(),
     recall: hits.length / expected.mustInclude.length,
@@ -167,14 +175,14 @@ if (process.argv.includes('--write-results')) {
     'GitHub Actions line format (timestamp prefix, `##[group]`, trailing `##[error]`),',
     'because that is the shape the GitHub provider returns. Token counts use `gpt-tokenizer`.',
     '',
-    '| sample | raw tokens | context tokens | cut | evidence | recall | missing |',
+    '| sample | raw tokens | compact tokens | cut | evidence | recall | missing |',
     '| --- | --- | --- | --- | --- | --- | --- |',
     ...rows.map(
       (r) =>
         `| ${r.name} | ${r.rawTokens} | ${r.contextTokens} | ${r.reductionPct}% | ${r.evidenceCount} | ${(r.recall * 100).toFixed(0)}% | ${r.missing.join(', ') || '—'} |`,
     ),
     '',
-    `**Total: ${summary.reductionPct}% token reduction, evidence recall ${summary.matched}/${summary.required} (${summary.recallPct}%).**`,
+    `**Total: ${summary.reductionPct}% token reduction (compact, model-facing), evidence recall ${summary.matched}/${summary.required} (${summary.recallPct}%).**`,
     '',
   ];
   writeFileSync(path.join(here, 'RESULTS.md'), lines.join('\n'));

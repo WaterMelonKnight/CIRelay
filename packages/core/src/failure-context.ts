@@ -3,6 +3,7 @@ import type { ExtractionProfileName } from './extraction-profiles.js';
 import type {
   CiProvider,
   FailureContext,
+  FailedJobContext,
   FailureEvidence,
   RunInput,
   CiRunQuery,
@@ -141,6 +142,50 @@ export async function buildFailureContext(
     evidence,
     generatedAt: now().toISOString(),
   };
+}
+
+/**
+ * Model-facing view of a FailureContext.
+ *
+ * The full object repeats the same log text up to three times: `errorLines` and
+ * `stackTraceCandidates` are projections of `evidence`, and `logExcerpt` usually
+ * contains the evidence lines again. That is cheap on disk and expensive in a
+ * model's context window, which is the whole point of CIRelay.
+ *
+ * This view drops the derivable duplicates and keeps `logExcerpt` only when it
+ * carries context lines that evidence does not already contain.
+ */
+export type CompactFailedJobContext = Omit<
+  FailedJobContext,
+  'errorLines' | 'stackTraceCandidates' | 'logExcerpt'
+> & { logExcerpt?: string };
+
+export type CompactFailureContext = Omit<FailureContext, 'failedJobs'> & {
+  failedJobs: CompactFailedJobContext[];
+};
+
+export function compactFailureContext(
+  context: FailureContext,
+): CompactFailureContext {
+  const evidenceMessages = new Set(
+    context.evidence.map((item) => item.message),
+  );
+  const failedJobs = context.failedJobs.map((job): CompactFailedJobContext => {
+    const excerptLines = job.logExcerpt
+      ? job.logExcerpt.split('\n').filter((line) => line.trim().length > 0)
+      : [];
+    const excerptIsCovered = excerptLines.every((line) =>
+      evidenceMessages.has(line),
+    );
+    const compact: CompactFailedJobContext = {
+      job: job.job,
+      failedSteps: job.failedSteps,
+    };
+    if (job.logExcerpt && !excerptIsCovered)
+      compact.logExcerpt = job.logExcerpt;
+    return compact;
+  });
+  return { ...context, failedJobs };
 }
 
 export async function buildFailureContextForQuery(
