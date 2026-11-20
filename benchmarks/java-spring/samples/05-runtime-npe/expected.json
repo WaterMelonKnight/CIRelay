@@ -1,0 +1,7 @@
+{
+  "name": "05-runtime-npe",
+  "kind": "runtime-exception",
+  "source": "mvn -B -ntp test with a NullPointerException raised inside a JUnit test",
+  "mustInclude": ["NullPointerException", "NullBoomTest"],
+  "notes": "Surefire error with a Java stack trace anchored per line"
+}

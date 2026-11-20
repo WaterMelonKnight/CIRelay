@@ -1,0 +1,7 @@
+{
+  "name": "01-compile-error",
+  "kind": "compile-error",
+  "source": "mvn -B -ntp test on a copy of WaterMelonKnight/FinStream with one undeclared enum constant",
+  "mustInclude": ["MarketSignalType.java", "cannot find symbol"],
+  "notes": "Maven prints [ERROR] <path>.java:[5,23] cannot find symbol"
+}

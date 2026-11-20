@@ -13,6 +13,13 @@ export default tseslint.config(
   },
   eslint.configs.recommended,
   {
+    // Benchmark harnesses run directly under Node, like scripts/.
+    files: ['benchmarks/**/*.mjs'],
+    languageOptions: {
+      globals: { console: 'readonly', process: 'readonly' },
+    },
+  },
+  {
     // Type-aware rules require parser services, so they are scoped to TypeScript
     // files only. Applying them globally breaks linting of this config file.
     files: ['**/*.ts', '**/*.tsx'],

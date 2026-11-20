@@ -1,0 +1,7 @@
+{
+  "name": "02-test-assertion",
+  "kind": "test-failure",
+  "source": "mvn -B -ntp test on a copy of WaterMelonKnight/FinStream with one AssertJ expectation inverted",
+  "mustInclude": ["AnomalyRulesTest", "rapidDropTriggers"],
+  "notes": "Surefire prints [ERROR] Tests run: 5, Failures: 1 ... <<< FAILURE! and the failing method name"
+}
