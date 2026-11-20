@@ -6,6 +6,23 @@ CIRelay turns CI and verification signals into structured, code-change-aware con
 
 CIRelay is a local stdio MCP server today, backed by a provider-neutral core. It is not a GitHub Actions replacement, a generic MCP wrapper, or merely a log reader.
 
+## At a glance
+
+```text
+GitHub Actions logs  ──►  deterministic extraction  ──►  compact FailureContext  ──►  coding agent
+(~100k tokens on a            (no model in the path)       failed step + evidence        diagnoses, fixes
+ failing Spring build)                                     + optional log search
+```
+
+- **Reduces the log, not the failure.** On five real Maven failures the model-facing
+  context is **79.9% smaller** while keeping **10/10** of the facts an agent needs to
+  name the cause ([benchmark](benchmarks/java-spring/)).
+- **Deterministic core.** Log parsing, extraction profiles and caching do not call a
+  model; the agent does the semantic reasoning and can ask for targeted log search.
+- **Not** a CI replacement, a log viewer, or a generic MCP wrapper.
+
+Try it in one line: `npx -y @cirelay/mcp@alpha` (see [Quick Start](#quick-start)).
+
 ## Quick Start
 
 Run the public alpha directly from npm—no clone or build is required:
@@ -182,6 +199,8 @@ Claude Code / Codex / DeepSeek Harness / other coding agents
 - Authentication relies on user-provided GitHub credentials.
 - Raw-log caching is process-local and ephemeral; there is no persistent history or fingerprint database yet.
 - Webhook/event push delivery is not available yet.
+- Very short logs are not worth reducing: below roughly 1k tokens the structured
+  envelope costs more than the log itself. Use the raw log at that size.
 
 ### Planned direction
 
@@ -199,6 +218,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm pack:check
+pnpm benchmark   # 5 real Maven failure samples, token cut + evidence recall
 ```
 
 Normal tests use fixtures and injected clients and require neither GitHub nor npm credentials.
